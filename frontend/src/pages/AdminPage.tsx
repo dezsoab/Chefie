@@ -1,13 +1,29 @@
-import { useQuery } from '@tanstack/react-query';
-import { fetchEvents } from '../api/events';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createEvent, fetchEvents } from '../api/events';
 import { fetchHealth } from '../api/health';
+import { useState } from 'react';
 
 
 export const AdminPage = () => {
 
     const { data, isPending, error } = useQuery({ queryKey: ['events'], queryFn: fetchEvents });
-    const { data: healthData, isPending: isHealthPending, error: healthError } = useQuery({ queryKey: ['health'], queryFn: fetchHealth });
+    const { data: healthData } = useQuery({ queryKey: ['health'], queryFn: fetchHealth });
 
+    const [name, setName] = useState('');
+    const queryClient = useQueryClient();
+
+    const createMutation = useMutation({
+        mutationFn: createEvent,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['events'] });
+            setName('');
+        },
+    });
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        createMutation.mutate(name);
+    }
 
     return (
         <>
@@ -29,6 +45,15 @@ export const AdminPage = () => {
                     ))}
                 </ul>
             )}
+
+
+            <form onSubmit={handleSubmit}>
+                <input className="rounded border px-3 py-2" value={name} onChange={(e) => setName(e.target.value)} />
+                <button className="rounded bg-orange-600 px-4 py-2 text-white disabled:opacity-50" type="submit" disabled={createMutation.isPending}>
+                    Create Event
+                </button>
+            </form>
+            {createMutation.isError && <p>{createMutation.error.message}</p>}
         </>
     )
 }
