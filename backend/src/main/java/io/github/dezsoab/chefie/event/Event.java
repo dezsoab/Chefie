@@ -7,13 +7,12 @@ import java.time.Instant;
 @Entity
 @Table(name = "event")
 public class Event {
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private final Instant createdAt = Instant.now();
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
+    private Long id;
     @Column(nullable = false)
     private String name;
 
@@ -30,7 +29,7 @@ public class Event {
 
     public void open() {
         if (status == EventStatus.OPEN) {
-            throw new IllegalStateException("Event is already open.");
+            return;
         }
         status = EventStatus.OPEN;
     }
@@ -39,7 +38,7 @@ public class Event {
         status = EventStatus.CLOSED;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

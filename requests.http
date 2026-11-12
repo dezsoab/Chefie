@@ -1,0 +1,29 @@
+GET http://localhost:8080/api/events HTTP/1.1
+###
+POST http://localhost:8080/api/admin/events HTTP/1.1
+  Content-Type: application/json
+
+  {
+    "name": "Pizza Party"
+  }
+###
+GET http://localhost:8080/api/events/current HTTP/1.1
+
+###
+POST http://localhost:8080/api/admin/events/7/open
+
+###
+GET http://localhost:8080/api/events/current
+
+###
+POST http://localhost:8080/api/admin/events/7/open
+###
+POST http://localhost:8080/api/admin/events HTTP/1.1
+  Content-Type: application/json
+
+  {
+    "name": "Grill Party"
+  }
+
+###
+POST http://localhost:8080/api/admin/events/8/open
