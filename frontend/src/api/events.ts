@@ -28,3 +28,23 @@ export async function createEvent(name: string): Promise<EventDto> {
     }
     return await response.json();
 }
+
+export async function openEvent(id: number): Promise<EventDto> {
+    const response = await fetch(`api/admin/events/${id}/open`, {
+        method: 'POST',
+    });
+    if (!response.ok) {
+        throw new Error('Failed to open event');
+    }
+    return await response.json();
+}
+
+export async function closeEvent(id: number): Promise<EventDto> {
+    const response = await fetch(`api/admin/events/${id}/close`, {
+        method: 'POST',
+    });
+    if (!response.ok) {
+        throw new Error('Failed to close event');
+    }
+    return await response.json();
+}
