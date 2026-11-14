@@ -32,4 +32,32 @@ public class Ingredient {
     public Ingredient() {
 
     }
+
+    public Event getEvent() {
+        return event;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public Integer getStock() {
+        return stock;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Integer getExtraAmount() {
+        return extraAmount;
+    }
+
+    public long getVersion() {
+        return version;
+    }
 }

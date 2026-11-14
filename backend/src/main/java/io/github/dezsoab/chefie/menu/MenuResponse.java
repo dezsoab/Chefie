@@ -7,9 +7,9 @@ public record MenuResponse(Long eventId, String eventName, List<MenuDto> menus, 
     public record MenuDto(Long id, String name, List<MenuItemDto> items) {
     }
 
-    public record MenuItemDto(Long id, String name, String description, List<String> ingredients, int available) {
+    public record MenuItemDto(Long id, String name, String description, List<String> ingredients, Integer available) {
     }
 
-    public record ExtraDto(Long ingredientId, String name, int available) {
+    public record ExtraDto(Long ingredientId, String name, Integer available) {
     }
 }

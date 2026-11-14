@@ -24,4 +24,28 @@ public class MenuItem {
         this.menu = menu;
         this.name = name;
     }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public Menu getMenu() {
+        return menu;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public int getSortOrder() {
+        return sortOrder;
+    }
 }

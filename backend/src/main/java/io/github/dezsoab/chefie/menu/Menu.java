@@ -25,6 +25,26 @@ public class Menu {
     }
 
     public Menu() {
-        
+
+    }
+
+    public Event getEvent() {
+        return event;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public int getSortOrder() {
+        return sortOrder;
     }
 }

@@ -26,5 +26,24 @@ public class RecipeLine {
         this.ingredient = ingredient;
         this.amount = amount;
     }
+
+    public RecipeLine() {
+    }
+
+    public RecipeLineId getId() {
+        return id;
+    }
+
+    public MenuItem getMenuItem() {
+        return menuItem;
+    }
+
+    public Ingredient getIngredient() {
+        return ingredient;
+    }
+
+    public int getAmount() {
+        return amount;
+    }
 }
 
