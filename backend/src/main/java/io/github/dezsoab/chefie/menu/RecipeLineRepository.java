@@ -9,6 +9,4 @@ import java.util.List;
 public interface RecipeLineRepository extends JpaRepository<RecipeLine, RecipeLineId> {
     @Query("select rl from RecipeLine rl join fetch rl.ingredient where rl.menuItem.menu.event.id = :eventId")
     List<RecipeLine> findAllForEvent(@Param("eventId") Long eventId);
-
-    List<RecipeLine> findByMenuItem_Menu_Event_Id(Long eventId);
 }

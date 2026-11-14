@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 
 
@@ -30,7 +31,7 @@ public class MenuService {
         List<Menu> menus = menuRepository.findByEventIdOrderBySortOrder(event.id());
         List<MenuItem> items
                 = menuItemRepository.findByMenu_Event_IdAndEnabledTrueOrderBySortOrder(event.id());
-        List<RecipeLine> lines = recipeLineRepository.findByMenuItem_Menu_Event_Id(event.id());
+        List<RecipeLine> lines = recipeLineRepository.findAllForEvent(event.id());
 
 
         Map<Long, List<MenuItem>> itemsByMenu = items.stream()
@@ -55,6 +56,19 @@ public class MenuService {
         List<String> ingredients = lines.stream()
                 .map(line -> line.getIngredient().getName())
                 .toList();
-        return new MenuResponse.MenuItemDto(menuItem.getId(), menuItem.getName(), menuItem.getDescription(), ingredients, null);
+        return new MenuResponse.MenuItemDto(menuItem.getId(), menuItem.getName(), menuItem.getDescription(), ingredients, calculateAvailable(lines));
+    }
+
+    private Integer calculateAvailable(List<RecipeLine> lines) {
+        OptionalInt min = lines.stream()
+                .filter(line -> line.getIngredient().getStock() != null)
+                .mapToInt(line -> line.getIngredient().getStock() / line.getAmount())
+                .min();
+
+        if (min.isPresent()) {
+            return min.getAsInt();
+        }
+
+        return null;
     }
 }
