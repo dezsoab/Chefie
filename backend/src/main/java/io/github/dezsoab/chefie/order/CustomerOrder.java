@@ -52,7 +52,55 @@ public class CustomerOrder {
     }
 
     public CustomerOrder() {
-        
+
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Event getEvent() {
+        return event;
+    }
+
+    public MenuItem getMenuItem() {
+        return menuItem;
+    }
+
+    public int getNumber() {
+        return number;
+    }
+
+    public String getGuestName() {
+        return guestName;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public UUID getGuestToken() {
+        return guestToken;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getCookingAt() {
+        return cookingAt;
+    }
+
+    public Instant getReadyAt() {
+        return readyAt;
+    }
+
+    public Instant getPickedUpAt() {
+        return pickedUpAt;
     }
 }
 

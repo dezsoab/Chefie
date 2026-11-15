@@ -9,7 +9,7 @@ import java.time.Instant;
 public class Event {
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private final Instant createdAt = Instant.now();
+    private Instant createdAt = Instant.now();
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -20,11 +20,19 @@ public class Event {
     @Column(nullable = false)
     private EventStatus status = EventStatus.DRAFT;
 
+    @Column(nullable = false)
+    private int lastOrderNumber = 0;
+
     protected Event() {
     }
 
     public Event(String name) {
         this.name = name;
+    }
+
+    public int nextOrderNumber() {
+        this.lastOrderNumber++;
+        return lastOrderNumber;
     }
 
     public void open() {
@@ -52,5 +60,9 @@ public class Event {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Integer getLastOrderNumber() {
+        return lastOrderNumber;
     }
 }

@@ -22,11 +22,14 @@ public class EventService {
                 .toList();
     }
 
+    public Event getOpenEvent() {
+        return eventRepository.findFirstByStatus(EventStatus.OPEN)
+                .orElseThrow(() -> new NotFoundException("No open event"));
+    }
+
     @Transactional(readOnly = true)
     public EventDto findCurrent() {
-        return eventRepository.findFirstByStatus(EventStatus.OPEN)
-                .map(EventDto::from)
-                .orElseThrow(() -> new NotFoundException("No open event"));
+        return EventDto.from(getOpenEvent());
     }
 
     @Transactional
@@ -55,5 +58,10 @@ public class EventService {
 
         event.open();
         return EventDto.from(event);
+    }
+
+    public int nextOrderNumber(Long eventId) {
+        Event event = eventRepository.findLockedById(eventId).orElseThrow(() -> new NotFoundException("Event not found"));
+        return event.nextOrderNumber();
     }
 }

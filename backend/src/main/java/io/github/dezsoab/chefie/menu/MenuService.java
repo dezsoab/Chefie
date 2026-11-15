@@ -1,5 +1,7 @@
 package io.github.dezsoab.chefie.menu;
 
+import io.github.dezsoab.chefie.common.NotFoundException;
+import io.github.dezsoab.chefie.event.Event;
 import io.github.dezsoab.chefie.event.EventDto;
 import io.github.dezsoab.chefie.event.EventService;
 import org.springframework.stereotype.Service;
@@ -70,5 +72,19 @@ public class MenuService {
         }
 
         return null;
+    }
+
+    public MenuItem getOrderableMenuItem(Long itemId, Event event) {
+        MenuItem menuItem = menuItemRepository.findById(itemId).orElseThrow(() -> new NotFoundException("Menu item is not found"));
+
+        if (!menuItem.isEnabled()) {
+            throw new NotFoundException("Menu item is not found");
+        }
+
+        if (!menuItem.getMenu().getEvent().getId().equals(event.getId())) {
+            throw new NotFoundException("Menu item is not found");
+        }
+
+        return menuItem;
     }
 }
