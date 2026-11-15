@@ -23,8 +23,8 @@ public class OrderService {
     public OrderCreatedResponse placeOrder(PlaceOrderRequest placeOrderRequest) {
         Event openEvent = eventService.getOpenEvent();
 
-        MenuItem orderdableMenuItem = menuService.getOrderableMenuItem(placeOrderRequest.menuItemId(), openEvent);
-        CustomerOrder customerOrder = orderRepository.save(new CustomerOrder(openEvent, orderdableMenuItem, eventService.nextOrderNumber(openEvent.getId()), placeOrderRequest.guestName(), placeOrderRequest.note()));
+        MenuItem orderableMenuItem = menuService.getOrderableMenuItem(placeOrderRequest.menuItemId(), openEvent);
+        CustomerOrder customerOrder = orderRepository.save(new CustomerOrder(openEvent, orderableMenuItem, eventService.nextOrderNumber(openEvent.getId()), placeOrderRequest.guestName(), placeOrderRequest.note()));
 
         return new OrderCreatedResponse(customerOrder.getId(), customerOrder.getNumber(), customerOrder.getGuestToken());
     }
