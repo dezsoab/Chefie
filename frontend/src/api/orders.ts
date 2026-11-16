@@ -13,10 +13,12 @@ export type OrderCreatedResponse = {
 export type OrderStatusDto = {
     id: number,
     itemName: string,
-    status: "QUEUED" | "COOKING" | "READY" | "PICKED_UP" | "CANCELLED",
-    ordersAhead: number;
+    status: OrderStatus,
+    ordersAhead: number,
     number: number
 }
+
+export type OrderStatus = "QUEUED" | "COOKING" | "READY" | "PICKED_UP" | "CANCELLED";
 
 export async function placeOrder(request: PlaceOrderRequest): Promise<OrderCreatedResponse> {
     const response = await fetch("/api/orders", {

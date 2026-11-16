@@ -49,4 +49,14 @@ public class OrderService {
 
         return new OrderStatusDto(customerOrder.getId(), customerOrder.getNumber(), customerOrder.getMenuItem().getName(), customerOrder.getStatus(), ordersAhead);
     }
+
+    @Transactional(readOnly = true)
+    public List<KitchenOrderDto> getKitchenOrders() {
+        Event openEvent = eventService.getOpenEvent();
+        List<CustomerOrder> activeOrdersForKitchen = orderRepository.findActiveForKitchen(openEvent.getId(), List.of(OrderStatus.QUEUED, OrderStatus.COOKING, OrderStatus.READY));
+
+        return activeOrdersForKitchen.stream()
+                .map(order -> new KitchenOrderDto(order.getId(), order.getNumber(), order.getGuestName(), order.getNote(), order.getMenuItem().getName(), order.getStatus(), order.getCreatedAt()))
+                .toList();
+    }
 }
