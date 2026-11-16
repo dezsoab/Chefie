@@ -22,6 +22,14 @@ public class RecipeLineId implements Serializable {
     public RecipeLineId() {
     }
 
+    public Long getMenuItemId() {
+        return menuItemId;
+    }
+
+    public Long getIngredientId() {
+        return ingredientId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;

@@ -22,10 +22,11 @@ public class OrderService {
     @Transactional
     public OrderCreatedResponse placeOrder(PlaceOrderRequest placeOrderRequest) {
         Event openEvent = eventService.getOpenEvent();
-
         MenuItem orderableMenuItem = menuService.getOrderableMenuItem(placeOrderRequest.menuItemId(), openEvent);
-        CustomerOrder customerOrder = orderRepository.save(new CustomerOrder(openEvent, orderableMenuItem, eventService.nextOrderNumber(openEvent.getId()), placeOrderRequest.guestName(), placeOrderRequest.note()));
 
+        menuService.reserveStock(orderableMenuItem);
+
+        CustomerOrder customerOrder = orderRepository.save(new CustomerOrder(openEvent, orderableMenuItem, eventService.nextOrderNumber(openEvent.getId()), placeOrderRequest.guestName(), placeOrderRequest.note()));
         return new OrderCreatedResponse(customerOrder.getId(), customerOrder.getNumber(), customerOrder.getGuestToken());
     }
 }

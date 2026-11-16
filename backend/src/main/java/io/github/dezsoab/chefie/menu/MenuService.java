@@ -1,5 +1,6 @@
 package io.github.dezsoab.chefie.menu;
 
+import io.github.dezsoab.chefie.common.ConflictException;
 import io.github.dezsoab.chefie.common.NotFoundException;
 import io.github.dezsoab.chefie.event.Event;
 import io.github.dezsoab.chefie.event.EventDto;
@@ -7,6 +8,7 @@ import io.github.dezsoab.chefie.event.EventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -19,12 +21,14 @@ public class MenuService {
     private final MenuRepository menuRepository;
     private final MenuItemRepository menuItemRepository;
     private final RecipeLineRepository recipeLineRepository;
+    private final IngredientRepository ingredientRepository;
 
-    public MenuService(EventService eventService, MenuRepository menuRepository, MenuItemRepository menuItemRepository, RecipeLineRepository recipeLineRepository) {
+    public MenuService(EventService eventService, MenuRepository menuRepository, MenuItemRepository menuItemRepository, RecipeLineRepository recipeLineRepository, IngredientRepository ingredientRepository) {
         this.eventService = eventService;
         this.menuRepository = menuRepository;
         this.menuItemRepository = menuItemRepository;
         this.recipeLineRepository = recipeLineRepository;
+        this.ingredientRepository = ingredientRepository;
     }
 
     @Transactional(readOnly = true)
@@ -86,5 +90,15 @@ public class MenuService {
         }
 
         return menuItem;
+    }
+
+    public void reserveStock(MenuItem item) {
+        List<RecipeLine> recipeLines = recipeLineRepository.findByMenuItemId(item.getId()).stream().sorted(Comparator.comparing(line -> line.getIngredient().getId())).toList();
+        for (RecipeLine line : recipeLines) {
+            int stockReserved = ingredientRepository.reserve(line.getId().getIngredientId(), line.getAmount());
+            if (stockReserved == 0) {
+                throw new ConflictException(item.getName() + " is sold out");
+            }
+        }
     }
 }
