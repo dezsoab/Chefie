@@ -1,11 +1,15 @@
 package io.github.dezsoab.chefie.order;
 
+import io.github.dezsoab.chefie.common.NotFoundException;
 import io.github.dezsoab.chefie.event.Event;
 import io.github.dezsoab.chefie.event.EventService;
 import io.github.dezsoab.chefie.menu.MenuItem;
 import io.github.dezsoab.chefie.menu.MenuService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class OrderService {
@@ -28,5 +32,21 @@ public class OrderService {
 
         CustomerOrder customerOrder = orderRepository.save(new CustomerOrder(openEvent, orderableMenuItem, eventService.nextOrderNumber(openEvent.getId()), placeOrderRequest.guestName(), placeOrderRequest.note()));
         return new OrderCreatedResponse(customerOrder.getId(), customerOrder.getNumber(), customerOrder.getGuestToken());
+    }
+
+    @Transactional(readOnly = true)
+    public OrderStatusDto getOrderStatus(Long id, UUID guestToken) {
+        CustomerOrder customerOrder = orderRepository.findById(id).orElseThrow(() -> new NotFoundException("Order not found."));
+
+        if (!guestToken.equals(customerOrder.getGuestToken())) {
+            throw new NotFoundException("Order not found.");
+        }
+
+        int ordersAhead = 0;
+        if (customerOrder.getStatus() == OrderStatus.QUEUED) {
+            ordersAhead = (int) orderRepository.countByEventIdAndStatusInAndNumberLessThan(customerOrder.getEvent().getId(), List.of(OrderStatus.QUEUED, OrderStatus.COOKING), customerOrder.getNumber());
+        }
+
+        return new OrderStatusDto(customerOrder.getId(), customerOrder.getNumber(), customerOrder.getMenuItem().getName(), customerOrder.getStatus(), ordersAhead);
     }
 }

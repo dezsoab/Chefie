@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { MenuItemDto } from '../api/menu'
 import { placeOrder } from '../api/orders'
+import { useNavigate } from 'react-router'
 
 type Props = {
     item: MenuItemDto | null
@@ -9,6 +10,9 @@ type Props = {
 }
 
 const OrderSheet = ({ item, onClose }: Props) => {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+
     const isOpen = item !== null
 
     const [guestName, setGuestName] = useState<string>(() =>
@@ -18,10 +22,14 @@ const OrderSheet = ({ item, onClose }: Props) => {
 
     const { mutate, isPending, error } = useMutation({
         mutationFn: placeOrder,
-        onSuccess: () => {
+        onSuccess: (order) => {
             localStorage.setItem('chefie.guestName', guestName.trim())
+            localStorage.setItem(`chefie.order.${order.id}`, order.guestToken)
             setNote('')
+            onClose();
+            navigate(`/orders/${order.id}`)
         },
+        onSettled: () => { queryClient.invalidateQueries({ queryKey: ['menu'] }) }
     })
 
     const handleOrder = () => {

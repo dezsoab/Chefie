@@ -10,6 +10,14 @@ export type OrderCreatedResponse = {
     guestToken: string,
 }
 
+export type OrderStatusDto = {
+    id: number,
+    itemName: string,
+    status: "QUEUED" | "COOKING" | "READY" | "PICKED_UP" | "CANCELLED",
+    ordersAhead: number;
+    number: number
+}
+
 export async function placeOrder(request: PlaceOrderRequest): Promise<OrderCreatedResponse> {
     const response = await fetch("/api/orders", {
         method: "POST",
@@ -21,5 +29,20 @@ export async function placeOrder(request: PlaceOrderRequest): Promise<OrderCreat
     if (!response.ok) {
         throw new Error("Creating order failed")
     }
+    return await response.json();
+}
+
+export async function fetchOrder(id: string, token: string): Promise<OrderStatusDto> {
+    const response = await fetch(`/api/orders/${id}`, {
+        method: "GET",
+        headers: {
+            "X-Order-Token": token
+        }
+    })
+
+    if (!response.ok) {
+        throw new Error("Fetching order failed: " + response.status);
+    }
+
     return await response.json();
 }
