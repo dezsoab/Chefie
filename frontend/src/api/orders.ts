@@ -1,3 +1,5 @@
+import { csrfHeaders } from "./csrf";
+
 export type PlaceOrderRequest = {
     menuItemId: number,
     guestName: string,
@@ -54,6 +56,7 @@ export async function changeOrderStatus(id: number, status: OrderStatus) {
         method: "POST",
         headers: {
             'Content-Type': 'application/json',
+            ...(await csrfHeaders())
         },
         body: JSON.stringify({ status })
     })

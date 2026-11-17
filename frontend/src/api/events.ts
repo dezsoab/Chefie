@@ -1,3 +1,5 @@
+import { csrfHeaders } from "./csrf";
+
 export type EventStatus = "OPEN" | "CLOSED" | "DRAFT";
 
 export type EventDto = {
@@ -8,7 +10,7 @@ export type EventDto = {
 }
 
 export async function fetchEvents(): Promise<EventDto[]> {
-    const response = await fetch('/api/events');
+    const response = await fetch('/api/admin/events');
     if (!response.ok) {
         throw new Error('Failed to fetch events');
     }
@@ -20,6 +22,7 @@ export async function createEvent(name: string): Promise<EventDto> {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            ...(await csrfHeaders())
         },
         body: JSON.stringify({ name }),
     })
@@ -32,6 +35,9 @@ export async function createEvent(name: string): Promise<EventDto> {
 export async function openEvent(id: number): Promise<EventDto> {
     const response = await fetch(`api/admin/events/${id}/open`, {
         method: 'POST',
+        headers: {
+            ...(await csrfHeaders())
+        }
     });
     if (!response.ok) {
         throw new Error('Failed to open event');
@@ -42,6 +48,9 @@ export async function openEvent(id: number): Promise<EventDto> {
 export async function closeEvent(id: number): Promise<EventDto> {
     const response = await fetch(`api/admin/events/${id}/close`, {
         method: 'POST',
+        headers: {
+            ...(await csrfHeaders())
+        }
     });
     if (!response.ok) {
         throw new Error('Failed to close event');

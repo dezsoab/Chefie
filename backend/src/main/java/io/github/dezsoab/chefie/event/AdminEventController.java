@@ -4,6 +4,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/admin/events")
 public class AdminEventController {
@@ -27,5 +29,10 @@ public class AdminEventController {
     @PostMapping("/{id}/close")
     public EventDto close(@PathVariable Long id) {
         return eventService.close(id);
+    }
+
+    @GetMapping
+    public List<EventDto> findAll() {
+        return eventService.findAll();
     }
 }
