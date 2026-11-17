@@ -101,4 +101,12 @@ public class MenuService {
             }
         }
     }
+
+    public void releaseStock(MenuItem menuItem) {
+        List<RecipeLine> recipeLines = recipeLineRepository.findByMenuItemId(menuItem.getId());
+
+        for (RecipeLine recipeLine : recipeLines) {
+            ingredientRepository.release(recipeLine.getIngredient().getId(), recipeLine.getAmount());
+        }
+    }
 }

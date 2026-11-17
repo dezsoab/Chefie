@@ -5,6 +5,7 @@ import io.github.dezsoab.chefie.event.Event;
 import io.github.dezsoab.chefie.event.EventService;
 import io.github.dezsoab.chefie.menu.MenuItem;
 import io.github.dezsoab.chefie.menu.MenuService;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,4 +60,18 @@ public class OrderService {
                 .map(order -> new KitchenOrderDto(order.getId(), order.getNumber(), order.getGuestName(), order.getNote(), order.getMenuItem().getName(), order.getStatus(), order.getCreatedAt()))
                 .toList();
     }
+
+    @Transactional
+    public KitchenOrderDto changeStatus(Long id, @NotNull OrderStatus nextOrderStatus) {
+        CustomerOrder customerOrder = orderRepository.findById(id).orElseThrow(() -> new NotFoundException("Customer order not found."));
+
+        customerOrder.changeStatus(nextOrderStatus);
+
+        if (nextOrderStatus == OrderStatus.CANCELLED) {
+            menuService.releaseStock(customerOrder.getMenuItem());
+        }
+
+        return new KitchenOrderDto(id, customerOrder.getNumber(), customerOrder.getGuestName(), customerOrder.getNote(), customerOrder.getMenuItem().getName(), customerOrder.getStatus(), customerOrder.getCreatedAt());
+    }
+
 }

@@ -1,5 +1,6 @@
 package io.github.dezsoab.chefie.order;
 
+import io.github.dezsoab.chefie.common.ConflictException;
 import io.github.dezsoab.chefie.event.Event;
 import io.github.dezsoab.chefie.menu.MenuItem;
 import jakarta.persistence.*;
@@ -53,6 +54,22 @@ public class CustomerOrder {
 
     public CustomerOrder() {
 
+    }
+
+    public void changeStatus(OrderStatus next) {
+        if (!status.canMoveTo(next)) {
+            throw new ConflictException("Cannot move order from " + status + " to " + next);
+        }
+
+        this.status = next;
+
+        switch (status) {
+            case COOKING -> cookingAt = Instant.now();
+            case READY -> readyAt = Instant.now();
+            case PICKED_UP -> pickedUpAt = Instant.now();
+            default -> {
+            }
+        }
     }
 
     public Long getId() {

@@ -1,8 +1,7 @@
 package io.github.dezsoab.chefie.order;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -18,5 +17,10 @@ public class KitchenController {
     @GetMapping
     public List<KitchenOrderDto> getKitchenOrders() {
         return orderService.getKitchenOrders();
+    }
+
+    @PostMapping("/{id}/status")
+    public KitchenOrderDto changeStatus(@PathVariable Long id, @Valid @RequestBody ChangeStatusRequest request) {
+        return orderService.changeStatus(id, request.status());
     }
 }

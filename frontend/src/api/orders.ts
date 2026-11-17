@@ -48,3 +48,18 @@ export async function fetchOrder(id: string, token: string): Promise<OrderStatus
 
     return await response.json();
 }
+
+export async function changeOrderStatus(id: number, status: OrderStatus) {
+    const response = await fetch("/api/kitchen/orders/" + id + "/status", {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status })
+    })
+
+    if (!response.ok) {
+        throw new Error("Changing order status failed: " + response.status)
+    }
+    return await response.json();
+}

@@ -13,4 +13,8 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
     @Modifying
     @Query("update Ingredient i set i.stock = i.stock - :amount, i.version = i.version +1" + "where i.id = :id and (i.stock is null or i.stock>:amount)")
     int reserve(@Param("id") Long id, @Param("amount") int amount);
+
+    @Modifying
+    @Query("update Ingredient i set i.stock = i.stock + :amount, i.version = i.version+1 where i.id = :id and i.stock is not null")
+    void release(@Param("id") Long id, @Param("amount") int amount);
 }
