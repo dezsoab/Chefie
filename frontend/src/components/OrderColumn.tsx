@@ -7,11 +7,9 @@ type ColumnProps = {
     title: string
     status: OrderStatus
     orders: KitchenOrderDto[]
-    onChangeStatus: (id: number, status: OrderStatus) => void
-    busy: boolean
 }
 
-const OrderColumn = ({ title, status, orders, onChangeStatus, busy }: ColumnProps) => {
+const OrderColumn = ({ title, status, orders }: ColumnProps) => {
     const { setNodeRef, isOver } = useDroppable({ id: status })
 
     return (
@@ -22,7 +20,7 @@ const OrderColumn = ({ title, status, orders, onChangeStatus, busy }: ColumnProp
             <h2 className="mb-3 text-lg font-bold">{title} ({orders.length})</h2>
             <div className="space-y-2">
                 {orders.map(order => (
-                    <OrderCard key={order.id} order={order} onChangeStatus={onChangeStatus} busy={busy} />
+                    <OrderCard key={order.id} order={order} />
                 ))}
             </div>
         </section>
