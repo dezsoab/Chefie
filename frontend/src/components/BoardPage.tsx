@@ -8,8 +8,8 @@ const BoardPage = () => {
     const { data: wifi } = useQuery({ queryKey: ['wifi'], queryFn: fetchWifiCredentials })
     const { data, error } = useQuery({ queryFn: fetchBoard, queryKey: ['board'], refetchInterval: 3000 })
 
-    const queuedOrders = data?.filter(o => o.status === 'QUEUED' || o.status === 'COOKING') ?? []
-    const readyOrders = data?.filter(o => o.status === 'READY') ?? []
+    const queuedOrders = data?.filter(o => o.orderStatus === 'QUEUED' || o.orderStatus === 'COOKING') ?? []
+    const readyOrders = data?.filter(o => o.orderStatus === 'READY') ?? []
     const menuUrl = `${window.location.origin}/`
 
     const wifiText = wifi
@@ -28,8 +28,8 @@ const BoardPage = () => {
                                 <span className="block text-3xl font-semibold">{o.guestName}</span>
                                 <span className="text-xl text-gray-400">{o.itemName}</span>
                             </span>
-                            <span className={`rounded-full px-4 py-1 text-xl font-semibold ${o.status === 'COOKING' ? 'bg-orange-500 text-white' : 'bg-gray-600 text-gray-200'}`}>
-                                {o.status === 'COOKING' ? 'In the oven' : 'Waiting'}
+                            <span className={`rounded-full px-4 py-1 text-xl font-semibold ${o.orderStatus === 'COOKING' ? 'bg-orange-500 text-white' : 'bg-gray-600 text-gray-200'}`}>
+                                {o.orderStatus === 'COOKING' ? 'In the oven' : 'Preparing'}
                             </span>
                         </li>
                     ))}

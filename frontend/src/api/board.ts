@@ -4,7 +4,7 @@ export type BoardEntry = {
     number: number,
     guestName: string,
     itemName: string,
-    status: OrderStatus
+    orderStatus: OrderStatus
 }
 
 export type NetworkConnection = {
