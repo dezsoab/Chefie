@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { closeEvent, createEvent, fetchEvents, openEvent, type EventStatus } from '../api/events';
 import { fetchHealth } from '../api/health';
 import { useState } from 'react';
+import LogoutButton from '../components/LogoutButton';
 
 const statusStyles: Record<EventStatus, string> = {
     OPEN: 'bg-green-100 text-green-800',
@@ -98,6 +99,7 @@ export const AdminPage = () => {
                     Create Event
                 </button>
             </form>
+            <LogoutButton />
             {createMutation.isError && <p className="text-red-600">{createMutation.error.message}</p>}
         </div>
     );

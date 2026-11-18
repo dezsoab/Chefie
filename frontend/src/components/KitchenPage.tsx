@@ -4,6 +4,7 @@ import OrderColumn from "./OrderColumn"
 import { changeOrderStatus, type OrderStatus } from "../api/orders"
 
 import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import LogoutButton from "./LogoutButton"
 
 
 
@@ -44,6 +45,7 @@ const KitchenPage = () => {
                     <OrderColumn title="Ready" status="READY" orders={readyOrders ?? []} onChangeStatus={handleChangeStatus} busy={isChanging} />
                 </div>
             </DndContext>
+            <LogoutButton />
         </>
     )
 }

@@ -1,16 +1,20 @@
 import { useState, type FormEvent } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
-import { login } from '../api/auth'
+import { fetchMe, login } from '../api/auth'
 
 const LoginPage = () => {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
 
     const { mutate, isPending, error } = useMutation({
         mutationFn: () => login(username, password),
-        onSuccess: () => navigate('/admin'),
+        onSuccess: async () => {
+            await queryClient.query({ queryKey: ['me'], queryFn: fetchMe })
+            navigate('/admin')
+        },
     })
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {

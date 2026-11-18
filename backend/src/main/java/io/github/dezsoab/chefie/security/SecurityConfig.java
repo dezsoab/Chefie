@@ -19,7 +19,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/admin/**", "/api/kitchen/**").authenticated()
+                        .requestMatchers("/api/admin/**", "/api/kitchen/**", "/api/auth/me").authenticated()
                         .anyRequest().permitAll())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/orders/**"))
                 .exceptionHandling(e -> e

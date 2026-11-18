@@ -1,19 +1,23 @@
 import './App.css'
-import { Route, Routes } from 'react-router/internal/react-server-client';
 import { AdminPage } from './pages/AdminPage';
 import MenuPage from './pages/MenuPage';
 import OrderStatusPage from './components/OrderStatusPage';
 import KitchenPage from './components/KitchenPage';
 import LoginPage from './components/LoginPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import { Navigate, Route, Routes } from 'react-router';
+import BoardPage from './components/BoardPage';
 
 function App() {
   return (
     <Routes>
-      <Route path="/menu" element={<MenuPage />} />
-      <Route path="/admin" element={<AdminPage />} />
-      <Route path="/orders/:id" element={<OrderStatusPage />} />;
-      <Route path="/kitchen" element={<KitchenPage />} />;
-      <Route path="/login" element={<LoginPage />} />;
+      <Route path="/kitchen" element={<ProtectedRoute><KitchenPage /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+      <Route path="/" element={<MenuPage />} />
+      <Route path="/orders/:id" element={<OrderStatusPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/board" element={<BoardPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
