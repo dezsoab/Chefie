@@ -6,6 +6,7 @@ import Logo from './Logo'
 import Sparkles from './Sparkles'
 import ChefNav from './ChefNav'
 import { useIsChef } from '../lib/useIsChef'
+import { useT } from '../i18n'
 
 const escapeWifi = (value: string) => value.replace(/([\\;,:"])/g, '\\$1')
 
@@ -25,6 +26,7 @@ const boardSparkles = [
 
 const QueueRow = ({ entry }: { entry: BoardEntry }) => {
     const cooking = entry.orderStatus === 'COOKING'
+    const t = useT()
     return (
         <li
             className={`flex h-[76px] animate-rise items-center gap-5 rounded-3xl px-4 transition-colors duration-500 ${cooking ? 'bg-grape-800 ring-2 ring-sun-400/70' : 'bg-white/[0.06] ring-1 ring-white/10'}`}
@@ -42,7 +44,7 @@ const QueueRow = ({ entry }: { entry: BoardEntry }) => {
                 className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 font-display text-lg font-semibold ${cooking ? 'bg-sun-400 text-grape-950' : 'bg-grape-700/80 text-grape-100'}`}
             >
                 {cooking ? <Flame size={20} strokeWidth={2.4} className="animate-pulse" /> : <Clock size={20} strokeWidth={2.4} />}
-                {cooking ? 'Cooking' : 'Waiting'}
+                {cooking ? t('board.cooking') : t('board.waiting')}
             </span>
         </li>
     )
@@ -88,6 +90,7 @@ const QrCard = ({ step, title, caption, icon: Icon, value }: QrCardProps) => (
 
 const BoardPage = () => {
     const isChef = useIsChef()
+    const t = useT()
     const { data: wifi } = useQuery({ queryKey: ['wifi'], queryFn: fetchWifiCredentials })
     const { data, error } = useQuery({ queryFn: fetchBoard, queryKey: ['board'], refetchInterval: 3000 })
 
@@ -110,9 +113,9 @@ const BoardPage = () => {
                 <div className="flex items-center gap-3 text-lg font-extrabold">
                     {isChef && <ChefNav />}
                     <span className="rounded-full bg-white/[0.06] px-4 py-2 text-grape-200 ring-1 ring-white/10">
-                        {queue.length} in the queue
+                        {t('board.inQueue', { count: queue.length })}
                     </span>
-                    <span className="rounded-full bg-sun-400 px-4 py-2 text-grape-950">{ready.length} ready</span>
+                    <span className="rounded-full bg-sun-400 px-4 py-2 text-grape-950">{t('board.readyCount', { count: ready.length })}</span>
                 </div>
             </header>
 
@@ -120,15 +123,15 @@ const BoardPage = () => {
                 <section className="flex min-h-0 flex-col">
                     <h2 className="mb-5 flex items-center gap-3 font-display text-3xl font-semibold text-white">
                         <Clock size={30} strokeWidth={2.3} className="text-grape-300" />
-                        In the queue
+                        {t('board.queueTitle')}
                     </h2>
                     {queue.length === 0 ? (
-                        <EmptyState text="No orders yet. Scan the code and be the first!" />
+                        <EmptyState text={t('board.emptyQueue')} />
                     ) : (
                         <ol className="space-y-3 overflow-hidden">
                             {queue.slice(0, MAX_QUEUE).map(entry => <QueueRow key={entry.number} entry={entry} />)}
                             {queue.length > MAX_QUEUE && (
-                                <li className="px-4 pt-1 text-lg font-bold text-grape-300">+{queue.length - MAX_QUEUE} more waiting</li>
+                                <li className="px-4 pt-1 text-lg font-bold text-grape-300">{t('board.moreWaiting', { count: queue.length - MAX_QUEUE })}</li>
                             )}
                         </ol>
                     )}
@@ -137,29 +140,29 @@ const BoardPage = () => {
                 <section className="flex min-h-0 flex-col">
                     <h2 className="mb-5 flex items-center gap-3 font-display text-4xl font-bold text-puffy">
                         <Bell size={32} strokeWidth={2.4} className="animate-wiggle text-sun-400" />
-                        Ready!
+                        {t('board.readyTitle')}
                     </h2>
                     {ready.length === 0 ? (
-                        <EmptyState text="Fresh ones coming soon." />
+                        <EmptyState text={t('board.emptyReady')} />
                     ) : (
                         <ol className="space-y-4 overflow-hidden p-2">
                             {ready.slice(0, MAX_READY).map(entry => <ReadyCard key={entry.number} entry={entry} />)}
                             {ready.length > MAX_READY && (
-                                <li className="px-4 text-lg font-bold text-sun-300">+{ready.length - MAX_READY} more ready</li>
+                                <li className="px-4 text-lg font-bold text-sun-300">{t('board.moreReady', { count: ready.length - MAX_READY })}</li>
                             )}
                         </ol>
                     )}
                 </section>
 
                 <aside className="flex min-h-0 flex-col gap-5">
-                    <QrCard step={1} title="Join the Wi-Fi" icon={Wifi} caption={wifi?.wifiSsid ?? 'Loading…'} value={wifiText} />
-                    <QrCard step={2} title="Scan to order" icon={Smartphone} caption="Opens the menu" value={menuUrl} />
+                    <QrCard step={1} title={t('board.wifi')} icon={Wifi} caption={wifi?.wifiSsid ?? t('common.loading')} value={wifiText} />
+                    <QrCard step={2} title={t('board.scan')} icon={Smartphone} caption={t('board.opensMenu')} value={menuUrl} />
                 </aside>
             </div>
 
             {error && (
                 <p className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-red-500/20 px-4 py-2 text-sm font-bold text-red-200 ring-1 ring-red-400/30">
-                    Connection lost. Retrying…
+                    {t('board.connectionLost')}
                 </p>
             )}
         </div>

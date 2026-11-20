@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react'
 import type { KitchenOrderDto } from '../api/kitchen'
 import type { OrderStatus } from '../api/orders'
 import OrderCard from './OrderCard'
+import { useT } from '../i18n'
 
 type ColumnProps = {
     title: string
@@ -13,6 +14,7 @@ type ColumnProps = {
 
 const OrderColumn = ({ title, icon: Icon, status, orders }: ColumnProps) => {
     const { setNodeRef, isOver } = useDroppable({ id: status })
+    const t = useT()
 
     return (
         <section
@@ -30,7 +32,7 @@ const OrderColumn = ({ title, icon: Icon, status, orders }: ColumnProps) => {
                 ))}
                 {orders.length === 0 && (
                     <p className="rounded-3xl border-2 border-dashed border-white/10 px-4 py-10 text-center text-sm font-bold text-grape-300">
-                        Nothing here
+                        {t('kitchen.empty')}
                     </p>
                 )}
             </div>

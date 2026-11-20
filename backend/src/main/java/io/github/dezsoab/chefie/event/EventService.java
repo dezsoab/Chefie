@@ -27,12 +27,12 @@ public class EventService {
 
     public Event getActiveEvent() {
         return eventRepository.findFirstByStatusIn(ACTIVE)
-                .orElseThrow(() -> new NotFoundException("No active event"));
+                .orElseThrow(() -> new NotFoundException("NO_ACTIVE_EVENT"));
     }
 
     public Event getOpenEvent() {
         return eventRepository.findFirstByStatus(EventStatus.OPEN)
-                .orElseThrow(() -> new ConflictException("The kitchen isn't taking orders right now."));
+                .orElseThrow(() -> new ConflictException("KITCHEN_CLOSED"));
     }
 
     @Transactional(readOnly = true)
@@ -41,8 +41,15 @@ public class EventService {
     }
 
     @Transactional
-    public EventDto create(String name) {
-        Event event = eventRepository.save(new Event(name));
+    public EventDto create(String name, String language) {
+        Event event = eventRepository.save(new Event(name.trim(), language));
+        return EventDto.from(event);
+    }
+
+    @Transactional
+    public EventDto changeLanguage(Long id, String language) {
+        Event event = findEventOrThrow(id);
+        event.changeLanguage(language);
         return EventDto.from(event);
     }
 
@@ -51,7 +58,7 @@ public class EventService {
     }
 
     private Event findEventOrThrow(Long id) {
-        return eventRepository.findById(id).orElseThrow(() -> new NotFoundException("Event " + id + " not found."));
+        return eventRepository.findById(id).orElseThrow(() -> new NotFoundException("EVENT_NOT_FOUND"));
     }
 
     @Transactional
@@ -77,8 +84,20 @@ public class EventService {
         return EventDto.from(event);
     }
 
+    @Transactional
+    public void delete(Long id) {
+        eventRepository.delete(findEventOrThrow(id));
+    }
+
+    public void ensureDeletable(Long id) {
+        Event event = findEventOrThrow(id);
+        if (ACTIVE.contains(event.getStatus())) {
+            throw new ConflictException("EVENT_ACTIVE");
+        }
+    }
+
     public int nextOrderNumber(Long eventId) {
-        Event event = eventRepository.findLockedById(eventId).orElseThrow(() -> new NotFoundException("Event not found"));
+        Event event = eventRepository.findLockedById(eventId).orElseThrow(() -> new NotFoundException("EVENT_NOT_FOUND"));
         return event.nextOrderNumber();
     }
 

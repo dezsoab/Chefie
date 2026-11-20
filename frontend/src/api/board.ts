@@ -1,3 +1,4 @@
+import { loadFailed } from "./http"
 import type { OrderStatus } from "./orders"
 
 export type BoardEntry = {
@@ -22,7 +23,7 @@ export async function fetchBoard(): Promise<BoardEntry[]> {
     }
 
     if (!response.ok) {
-        throw new Error("Fetching board failed: " + response.status)
+        throw new Error(loadFailed(response))
     }
 
     return await response.json();
@@ -36,7 +37,7 @@ export async function fetchWifiCredentials(): Promise<NetworkConnection> {
     )
 
     if (!response.ok) {
-        throw new Error("Getting wifi credentials failed: " + response.status)
+        throw new Error(loadFailed(response))
     }
 
     return response.json();

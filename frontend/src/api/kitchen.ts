@@ -1,3 +1,4 @@
+import { loadFailed } from "./http"
 import type { OrderStatus } from "./orders"
 
 export type Portion = {
@@ -28,7 +29,7 @@ export const fetchKitchenOrders = async (): Promise<KitchenOrderDto[]> => {
     }
 
     if (!response.ok) {
-        throw new Error("Fetching kitchen orders failed: " + response.status)
+        throw new Error(loadFailed(response))
     }
 
     return await response.json();

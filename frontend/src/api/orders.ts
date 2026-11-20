@@ -1,5 +1,6 @@
 import { csrfHeaders } from "./csrf";
-import { errorMessage } from "./http";
+import { errorMessage, loadFailed, saveFailed } from "./http";
+import { translate } from "../i18n/translate";
 
 export type PlaceOrderRequest = {
     menuItemId: number,
@@ -34,7 +35,7 @@ export async function placeOrder(request: PlaceOrderRequest): Promise<OrderCreat
         body: JSON.stringify(request)
     })
     if (!response.ok) {
-        throw new Error(await errorMessage(response, "Ordering didn't work. Please try again."))
+        throw new Error(await errorMessage(response, translate('error.orderFailed')))
     }
     return await response.json();
 }
@@ -52,7 +53,7 @@ export async function fetchOrder(id: string, token: string): Promise<OrderStatus
     }
 
     if (!response.ok) {
-        throw new Error("Fetching order failed: " + response.status);
+        throw new Error(loadFailed(response));
     }
 
     return await response.json();
@@ -69,7 +70,7 @@ export async function changeOrderStatus(id: number, status: OrderStatus) {
     })
 
     if (!response.ok) {
-        throw new Error(await errorMessage(response, "Changing order status failed: " + response.status))
+        throw new Error(await errorMessage(response, saveFailed(response)))
     }
     return await response.json();
 }

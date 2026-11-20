@@ -2,6 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import { Clock, MessageSquare } from 'lucide-react'
 import type { KitchenOrderDto } from '../api/kitchen'
 import { minutesSince } from '../lib/orders'
+import { useT } from '../i18n'
 
 type Props = {
     order: KitchenOrderDto;
@@ -10,6 +11,7 @@ type Props = {
 const OrderCard = ({ order }: Props) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: order.id })
     const minutes = minutesSince(order.createdAt)
+    const t = useT()
 
     return (
         <div
@@ -23,14 +25,14 @@ const OrderCard = ({ order }: Props) => {
                 <span className="font-display text-4xl font-bold leading-none text-sun-300">#{order.number}</span>
                 <span className="flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-xs font-extrabold text-grape-200">
                     <Clock size={13} strokeWidth={2.6} />
-                    {minutes === 0 ? 'new' : `${minutes} min`}
+                    {minutes === 0 ? t('kitchen.new') : t('kitchen.minutes', { count: minutes })}
                 </span>
             </div>
             <p className="mt-3 text-xl font-extrabold leading-tight text-white">{order.itemName}</p>
             {order.recipe.length > 0 && (
-                <ul className="mt-2 grid grid-cols-2 gap-x-3 gap-y-0.5 rounded-2xl bg-grape-950/50 px-3 py-2 text-xs font-semibold text-grape-200">
+                <ul className="mt-3 space-y-1 rounded-2xl bg-grape-950/50 px-3 py-2.5 text-base font-semibold text-grape-100">
                     {order.recipe.map((portion) => (
-                        <li key={portion.name} className="flex justify-between gap-2">
+                        <li key={portion.name} className="flex justify-between gap-3">
                             <span className="truncate">{portion.name}</span>
                             <span className="shrink-0 font-extrabold text-white">{portion.amount} {portion.unit}</span>
                         </li>
@@ -40,7 +42,7 @@ const OrderCard = ({ order }: Props) => {
             {order.extras.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                     {order.extras.map((extra) => (
-                        <span key={extra.name} className="rounded-full bg-sun-400 px-2.5 py-0.5 text-sm font-extrabold text-grape-950">
+                        <span key={extra.name} className="rounded-full bg-sun-400 px-3 py-1 text-base font-extrabold text-grape-950">
                             + {extra.name} · {extra.amount} {extra.unit}
                         </span>
                     ))}

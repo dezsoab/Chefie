@@ -1,3 +1,4 @@
+import { loadFailed } from './http'
 export type ExtraDto = {
     ingredientId: number;
     name: string;
@@ -40,7 +41,7 @@ export async function fetchMenu(): Promise<MenuResponse | null> {
         return null;
     }
     if (!response.ok) {
-        throw new Error('Failed to fetch menu: ' + response.status);
+        throw new Error(loadFailed(response));
     }
 
     return await response.json()

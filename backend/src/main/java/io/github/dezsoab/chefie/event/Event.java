@@ -23,11 +23,21 @@ public class Event {
     @Column(nullable = false)
     private int lastOrderNumber = 0;
 
+    @Column(nullable = false)
+    private String language = "en";
+
     protected Event() {
     }
 
-    public Event(String name) {
+    public Event(String name, String language) {
         this.name = name;
+        if (language != null) {
+            this.language = language;
+        }
+    }
+
+    public void changeLanguage(String language) {
+        this.language = language;
     }
 
     public int nextOrderNumber() {
@@ -60,6 +70,10 @@ public class Event {
 
     public EventStatus getStatus() {
         return status;
+    }
+
+    public String getLanguage() {
+        return language;
     }
 
     public Instant getCreatedAt() {

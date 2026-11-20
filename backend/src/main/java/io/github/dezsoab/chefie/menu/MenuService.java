@@ -96,14 +96,14 @@ public class MenuService {
     }
 
     public MenuItem getOrderableMenuItem(Long itemId, Event event) {
-        MenuItem menuItem = menuItemRepository.findById(itemId).orElseThrow(() -> new NotFoundException("Menu item is not found"));
+        MenuItem menuItem = menuItemRepository.findById(itemId).orElseThrow(() -> new NotFoundException("ITEM_NOT_FOUND"));
 
         if (!menuItem.isEnabled()) {
-            throw new NotFoundException("Menu item is not found");
+            throw new NotFoundException("ITEM_NOT_FOUND");
         }
 
         if (!menuItem.getMenu().getEvent().getId().equals(event.getId())) {
-            throw new NotFoundException("Menu item is not found");
+            throw new NotFoundException("ITEM_NOT_FOUND");
         }
 
         return menuItem;
@@ -121,7 +121,7 @@ public class MenuService {
                 .allMatch(ingredient -> ingredient.getExtraAmount() != null
                         && ingredient.getEvent().getId().equals(event.getId()));
         if (!allValid) {
-            throw new NotFoundException("Extra is not found");
+            throw new NotFoundException("EXTRA_NOT_FOUND");
         }
 
         return extras;
@@ -139,7 +139,7 @@ public class MenuService {
         for (Map.Entry<Long, Integer> entry : amounts.entrySet()) {
             int stockReserved = ingredientRepository.reserve(entry.getKey(), entry.getValue());
             if (stockReserved == 0) {
-                throw new ConflictException(item.getName() + " with these extras is sold out");
+                throw new ConflictException("SOLD_OUT", Map.of("item", item.getName()));
             }
         }
     }

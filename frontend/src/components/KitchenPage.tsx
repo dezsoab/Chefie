@@ -12,9 +12,11 @@ import DropZone from './DropZone'
 import LogoutButton from './LogoutButton'
 import Logo from './Logo'
 import ChefNav from './ChefNav'
+import { useT } from '../i18n'
 
 const KitchenPage = () => {
     const queryClient = useQueryClient()
+    const t = useT()
     const { isPending, error, data } = useQuery({ queryKey: ['kitchen-orders'], queryFn: fetchKitchenOrders, refetchInterval: 3000 })
 
     const queuedOrders = data?.filter(o => o.status === 'QUEUED')
@@ -76,7 +78,7 @@ const KitchenPage = () => {
             <header className="flex items-center justify-between gap-4 px-5 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
                 <div className="flex items-center gap-4">
                     <Logo />
-                    <span className="rounded-full bg-white/[0.06] px-3 py-1.5 text-sm font-extrabold text-grape-200 ring-1 ring-white/10">Kitchen</span>
+                    <span className="rounded-full bg-white/[0.06] px-3 py-1.5 text-sm font-extrabold text-grape-200 ring-1 ring-white/10">{t('kitchen.badge')}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <ChefNav />
@@ -90,7 +92,7 @@ const KitchenPage = () => {
                         <span className={`size-2.5 rounded-full ${takingOrders ? 'animate-pulse bg-emerald-400' : 'bg-sun-400'}`} />
                         <span className="font-display text-lg font-semibold text-white">{currentEvent.name}</span>
                         <span className="text-sm font-bold text-grape-200">
-                            {takingOrders ? 'Taking orders' : 'On hold · guests see "opens soon"'}
+                            {takingOrders ? t('kitchen.takingOrders') : t('kitchen.onHold')}
                         </span>
                         <button
                             type="button"
@@ -99,22 +101,22 @@ const KitchenPage = () => {
                             className={`ml-auto flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-extrabold transition disabled:opacity-50 ${takingOrders ? 'text-sun-200 ring-1 ring-sun-400/40 hover:bg-sun-400/10' : 'btn-sun'}`}
                         >
                             {takingOrders ? <Pause size={16} strokeWidth={2.6} /> : <Play size={16} strokeWidth={2.6} />}
-                            {takingOrders ? 'Pause orders' : 'Open kitchen'}
+                            {takingOrders ? t('kitchen.pause') : t('kitchen.open')}
                         </button>
                     </>
                 ) : (
                     <>
                         <span className="size-2.5 rounded-full bg-white/30" />
-                        <span className="text-sm font-bold text-grape-200">No active event. Put one on hold or open it to start.</span>
+                        <span className="text-sm font-bold text-grape-200">{t('kitchen.noEvent')}</span>
                         <Link to="/admin" className="btn-sun ml-auto rounded-xl px-4 py-2 text-sm font-extrabold">
-                            Go to Admin
+                            {t('kitchen.goAdmin')}
                         </Link>
                     </>
                 )}
                 {eventMutation.error && <p className="w-full text-sm font-bold text-red-200">{eventMutation.error.message}</p>}
             </div>
 
-            {isPending && <p className="px-5 pt-4 font-bold text-grape-200">Loading orders…</p>}
+            {isPending && <p className="px-5 pt-4 font-bold text-grape-200">{t('kitchen.loading')}</p>}
             {(error || changeError) && (
                 <p className="mx-5 mt-4 rounded-2xl bg-red-500/15 px-4 py-3 text-sm font-bold text-red-200 ring-1 ring-red-400/30">
                     {(error ?? changeError)?.message}
@@ -128,18 +130,18 @@ const KitchenPage = () => {
                 onDragCancel={() => setDraggedOrder(null)}
             >
                 <div className="grid grid-cols-3 gap-4 p-5 pb-40">
-                    <OrderColumn title="Waiting" icon={Clock} status="QUEUED" orders={queuedOrders ?? []} />
-                    <OrderColumn title="Cooking" icon={Flame} status="COOKING" orders={cookingOrders ?? []} />
-                    <OrderColumn title="Ready" icon={Bell} status="READY" orders={readyOrders ?? []} />
+                    <OrderColumn title={t('kitchen.colWaiting')} icon={Clock} status="QUEUED" orders={queuedOrders ?? []} />
+                    <OrderColumn title={t('kitchen.colCooking')} icon={Flame} status="COOKING" orders={cookingOrders ?? []} />
+                    <OrderColumn title={t('kitchen.colReady')} icon={Bell} status="READY" orders={readyOrders ?? []} />
                 </div>
 
                 {showDropBar && (
                     <div className="fixed inset-x-0 bottom-0 z-20 flex animate-rise gap-4 border-t border-white/10 bg-grape-950/85 p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] backdrop-blur-lg">
                         {draggedOrder?.status === 'READY' && (
-                            <DropZone status="PICKED_UP" label="Picked up" icon={Check} tone="sun" />
+                            <DropZone status="PICKED_UP" label={t('kitchen.pickedUp')} icon={Check} tone="sun" />
                         )}
                         {draggedOrder?.status === 'QUEUED' && (
-                            <DropZone status="CANCELLED" label="Cancel order" icon={X} tone="red" />
+                            <DropZone status="CANCELLED" label={t('kitchen.cancel')} icon={X} tone="red" />
                         )}
                     </div>
                 )}

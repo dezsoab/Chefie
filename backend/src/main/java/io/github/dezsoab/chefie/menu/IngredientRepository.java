@@ -25,4 +25,8 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
     @Query("update Ingredient i set i.stock = i.stock + :delta, i.version = i.version + 1 " +
             "where i.id = :id and i.stock is not null and i.stock + :delta >= 0")
     int adjustStock(@Param("id") Long id, @Param("delta") int delta);
+
+    @Modifying
+    @Query("delete from Ingredient i where i.event.id = :eventId")
+    void deleteAllForEvent(@Param("eventId") Long eventId);
 }

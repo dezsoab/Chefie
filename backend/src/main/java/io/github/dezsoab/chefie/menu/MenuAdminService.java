@@ -74,7 +74,7 @@ public class MenuAdminService {
     public void updateIngredient(Long id, IngredientRequest request) {
         Ingredient ingredient = findIngredient(id);
         if (request.version() != null && request.version() != ingredient.getVersion()) {
-            throw new ConflictException(ingredient.getName() + " changed in the meantime. Check the new numbers and save again.");
+            throw new ConflictException("INGREDIENT_CHANGED", Map.of("name", ingredient.getName()));
         }
         ingredient.update(request.name().trim(), request.unit().trim(), request.stock(), request.extraAmount());
     }
@@ -83,10 +83,10 @@ public class MenuAdminService {
     public void adjustStock(Long id, int delta) {
         Ingredient ingredient = findIngredient(id);
         if (ingredient.getStock() == null) {
-            throw new ConflictException(ingredient.getName() + " has unlimited stock.");
+            throw new ConflictException("STOCK_UNLIMITED", Map.of("name", ingredient.getName()));
         }
         if (ingredientRepository.adjustStock(id, delta) == 0) {
-            throw new ConflictException("Stock of " + ingredient.getName() + " can't go below 0.");
+            throw new ConflictException("STOCK_NEGATIVE", Map.of("name", ingredient.getName()));
         }
     }
 
@@ -97,7 +97,7 @@ public class MenuAdminService {
             ingredientRepository.delete(ingredient);
             ingredientRepository.flush();
         } catch (DataIntegrityViolationException e) {
-            throw new ConflictException(ingredient.getName() + " is still used by a menu item or an order.");
+            throw new ConflictException("INGREDIENT_IN_USE", Map.of("name", ingredient.getName()));
         }
     }
 
@@ -110,16 +110,16 @@ public class MenuAdminService {
 
     @Transactional
     public void deleteMenu(Long id) {
-        Menu menu = menuRepository.findById(id).orElseThrow(() -> new NotFoundException("Category not found."));
+        Menu menu = menuRepository.findById(id).orElseThrow(() -> new NotFoundException("CATEGORY_NOT_FOUND"));
         if (menuItemRepository.existsByMenuId(id)) {
-            throw new ConflictException("Remove the items in " + menu.getName() + " first.");
+            throw new ConflictException("CATEGORY_NOT_EMPTY", Map.of("name", menu.getName()));
         }
         menuRepository.delete(menu);
     }
 
     @Transactional
     public void createMenuItem(Long menuId, MenuItemRequest request) {
-        Menu menu = menuRepository.findById(menuId).orElseThrow(() -> new NotFoundException("Category not found."));
+        Menu menu = menuRepository.findById(menuId).orElseThrow(() -> new NotFoundException("CATEGORY_NOT_FOUND"));
         int sortOrder = (int) menuItemRepository.countByMenuId(menuId) + 1;
         MenuItem item = menuItemRepository.save(new MenuItem(menu, request.name().trim(), sortOrder));
         item.setEnabled(request.enabled());
@@ -141,13 +141,16 @@ public class MenuAdminService {
     @Transactional
     public void deleteMenuItem(Long id) {
         MenuItem item = findItem(id);
-        try {
-            recipeLineRepository.deleteAll(recipeLineRepository.findByMenuItemId(id));
-            menuItemRepository.delete(item);
-            menuItemRepository.flush();
-        } catch (DataIntegrityViolationException e) {
-            throw new ConflictException(item.getName() + " was already ordered. Hide it instead.");
-        }
+        recipeLineRepository.deleteAll(recipeLineRepository.findByMenuItemId(id));
+        menuItemRepository.delete(item);
+    }
+
+    @Transactional
+    public void deleteAllForEvent(Long eventId) {
+        recipeLineRepository.deleteAllForEvent(eventId);
+        menuItemRepository.deleteAllForEvent(eventId);
+        menuRepository.deleteAllForEvent(eventId);
+        ingredientRepository.deleteAllForEvent(eventId);
     }
 
     private void saveLines(MenuItem item, Long eventId, List<RecipeLineRequest> lines) {
@@ -163,7 +166,7 @@ public class MenuAdminService {
         boolean allValid = ingredients.size() == amounts.size()
                 && ingredients.stream().allMatch(ingredient -> ingredient.getEvent().getId().equals(eventId));
         if (!allValid) {
-            throw new NotFoundException("Ingredient not found.");
+            throw new NotFoundException("INGREDIENT_NOT_FOUND");
         }
 
         recipeLineRepository.saveAll(ingredients.stream()
@@ -182,10 +185,10 @@ public class MenuAdminService {
     }
 
     private Ingredient findIngredient(Long id) {
-        return ingredientRepository.findById(id).orElseThrow(() -> new NotFoundException("Ingredient not found."));
+        return ingredientRepository.findById(id).orElseThrow(() -> new NotFoundException("INGREDIENT_NOT_FOUND"));
     }
 
     private MenuItem findItem(Long id) {
-        return menuItemRepository.findById(id).orElseThrow(() -> new NotFoundException("Item not found."));
+        return menuItemRepository.findById(id).orElseThrow(() -> new NotFoundException("ITEM_NOT_FOUND"));
     }
 }

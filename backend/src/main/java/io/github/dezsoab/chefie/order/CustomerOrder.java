@@ -19,9 +19,12 @@ public class CustomerOrder {
     @JoinColumn(name = "event_id")
     private Event event;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "menu_item_id")
     private MenuItem menuItem;
+
+    @Column(nullable = false)
+    private String itemName;
 
     @Column(nullable = false)
     private int number;
@@ -44,6 +47,7 @@ public class CustomerOrder {
     public CustomerOrder(Event event, MenuItem menuItem, int number, String guestName, String note) {
         this.event = event;
         this.menuItem = menuItem;
+        this.itemName = menuItem.getName();
         this.number = number;
         this.guestName = guestName;
         this.note = note;
@@ -58,7 +62,7 @@ public class CustomerOrder {
 
     public void changeStatus(OrderStatus next) {
         if (!status.canMoveTo(next)) {
-            throw new ConflictException("Cannot move order from " + status + " to " + next);
+            throw new ConflictException("STATUS_CHANGE");
         }
 
         this.status = next;
@@ -82,6 +86,10 @@ public class CustomerOrder {
 
     public MenuItem getMenuItem() {
         return menuItem;
+    }
+
+    public String getItemName() {
+        return itemName;
     }
 
     public int getNumber() {

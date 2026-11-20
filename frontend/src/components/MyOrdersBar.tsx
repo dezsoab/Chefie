@@ -5,22 +5,25 @@ import { Bell, ChevronRight, Clock, Flame, type LucideIcon } from 'lucide-react'
 import { fetchOrder, type OrderStatus, type OrderStatusDto } from '../api/orders'
 import { forgetOrder, isFinalStatus, readStoredOrders } from '../lib/orders'
 import { playChime, vibrate } from '../lib/sound'
+import { useT, type Translate } from '../i18n'
 
 type View = { icon: LucideIcon; title: string; detail: string; ready: boolean }
 
-const describe = (order: OrderStatusDto): View => {
+const describe = (order: OrderStatusDto, t: Translate): View => {
   switch (order.status) {
     case 'COOKING':
-      return { icon: Flame, title: `#${order.number} is cooking`, detail: order.itemName, ready: false }
+      return { icon: Flame, title: t('bar.cooking', { number: order.number }), detail: order.itemName, ready: false }
     case 'READY':
-      return { icon: Bell, title: `#${order.number} is ready!`, detail: "Come grab it while it's hot", ready: true }
+      return { icon: Bell, title: t('bar.ready', { number: order.number }), detail: t('bar.readyDetail'), ready: true }
     default:
       return {
         icon: Clock,
-        title: `Order #${order.number}`,
-        detail: order.ordersAhead > 0
-          ? `${order.ordersAhead} ahead of you · ${order.itemName}`
-          : `You're next · ${order.itemName}`,
+        title: t('bar.order', { number: order.number }),
+        detail: order.ordersAhead === 1
+          ? t('bar.aheadOne', { item: order.itemName })
+          : order.ordersAhead > 1
+            ? t('bar.aheadMany', { count: order.ordersAhead, item: order.itemName })
+            : t('bar.next', { item: order.itemName }),
         ready: false,
       }
   }
@@ -28,6 +31,7 @@ const describe = (order: OrderStatusDto): View => {
 
 const MyOrdersBar = ({ eventId }: { eventId: number }) => {
   const stored = useMemo(() => readStoredOrders(), [])
+  const t = useT()
 
   const results = useQueries({
     queries: stored.map((order) => ({
@@ -73,7 +77,7 @@ const MyOrdersBar = ({ eventId }: { eventId: number }) => {
     <div className="fixed inset-x-0 bottom-0 z-30 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
       <div className="mx-auto flex max-w-md flex-col gap-2">
         {active.map((order) => {
-          const view = describe(order)
+          const view = describe(order, t)
           const Icon = view.icon
           return (
             <Link

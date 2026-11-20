@@ -1,3 +1,4 @@
+import { loadFailed } from './http'
 export type Health = {
     status: string;
     database: string;
@@ -7,7 +8,7 @@ export type Health = {
 export async function fetchHealth(): Promise<Health> {
     const response = await fetch('/api/health');
     if (!response.ok) {
-        throw new Error('Failed to fetch health data');
+        throw new Error(loadFailed(response));
     }
     return await response.json() as Promise<Health>;
 }

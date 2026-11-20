@@ -6,6 +6,7 @@ import type { ExtraDto, MenuItemDto } from '../api/menu'
 import { placeOrder } from '../api/orders'
 import { readGuestName, rememberGuestName, rememberOrder } from '../lib/orders'
 import { unlockAudio } from '../lib/sound'
+import { useT } from '../i18n'
 
 type Props = {
     item: MenuItemDto | null
@@ -19,6 +20,7 @@ const fieldClass = 'mt-2 w-full rounded-2xl border border-white/10 bg-white/5 px
 const OrderSheet = ({ item, extras, onClose }: Props) => {
     const navigate = useNavigate()
     const queryClient = useQueryClient()
+    const t = useT()
     const isOpen = item !== null
 
     const [shownItem, setShownItem] = useState<MenuItemDto | null>(item)
@@ -73,10 +75,14 @@ const OrderSheet = ({ item, extras, onClose }: Props) => {
     }
 
     const orderLabel = isPending
-        ? 'Sending to the kitchen…'
-        : extraIds.length > 0
-            ? `Order with ${extraIds.length} extra${extraIds.length > 1 ? 's' : ''}`
-            : 'Order'
+        ? t('sheet.sending')
+        : extraIds.length === 1
+            ? t('sheet.orderWithExtra')
+            : extraIds.length > 1
+                ? t('sheet.orderWithExtras', { count: extraIds.length })
+                : t('sheet.order')
+
+    const orderError = error ? error.message : null
 
     return (
         <>
@@ -87,7 +93,7 @@ const OrderSheet = ({ item, extras, onClose }: Props) => {
             <div
                 role="dialog"
                 aria-modal="true"
-                aria-label={shownItem?.name ?? 'Order'}
+                aria-label={shownItem?.name ?? t('sheet.dialog')}
                 inert={!isOpen}
                 className={`fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[92dvh] max-w-md overflow-y-auto rounded-t-[32px] border-t border-white/10 bg-grape-900 px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-3 shadow-[0_-20px_60px_-10px_rgb(0_0_0/0.6)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
             >
@@ -104,7 +110,7 @@ const OrderSheet = ({ item, extras, onClose }: Props) => {
 
                 {extras.length > 0 && (
                     <div className="mt-7">
-                        <p className={labelClass}>Make it extra</p>
+                        <p className={labelClass}>{t('sheet.extras')}</p>
                         <div className="mt-3 flex flex-wrap gap-2">
                             {extras.map((extra) => {
                                 const selected = extraIds.includes(extra.ingredientId)
@@ -123,7 +129,7 @@ const OrderSheet = ({ item, extras, onClose }: Props) => {
                                     >
                                         {selected ? <Check size={16} strokeWidth={3} /> : <Plus size={16} strokeWidth={3} />}
                                         {extra.name}
-                                        {!fits && <span className="text-xs font-extrabold">· sold out</span>}
+                                        {!fits && <span className="text-xs font-extrabold">· {t('sheet.extraSoldOut')}</span>}
                                     </button>
                                 )
                             })}
@@ -133,11 +139,11 @@ const OrderSheet = ({ item, extras, onClose }: Props) => {
 
                 <div className="mt-7 space-y-4">
                     <label className="block">
-                        <span className={labelClass}>Your name</span>
+                        <span className={labelClass}>{t('sheet.name')}</span>
                         <input
                             value={guestName}
                             onChange={(e) => setGuestName(e.target.value)}
-                            placeholder="So we know who to call"
+                            placeholder={t('sheet.namePlaceholder')}
                             autoComplete="given-name"
                             maxLength={40}
                             className={fieldClass}
@@ -145,12 +151,12 @@ const OrderSheet = ({ item, extras, onClose }: Props) => {
                     </label>
                     <label className="block">
                         <span className={labelClass}>
-                            Note <span className="font-semibold normal-case tracking-normal text-grape-400">(optional)</span>
+                            {t('sheet.note')} <span className="font-semibold normal-case tracking-normal text-grape-400">{t('sheet.optional')}</span>
                         </span>
                         <textarea
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
-                            placeholder="Anything the chef should know?"
+                            placeholder={t('sheet.notePlaceholder')}
                             rows={2}
                             maxLength={200}
                             className={`${fieldClass} resize-none`}
@@ -158,9 +164,9 @@ const OrderSheet = ({ item, extras, onClose }: Props) => {
                     </label>
                 </div>
 
-                {error && (
+                {orderError && (
                     <p className="mt-5 animate-pop rounded-2xl bg-red-500/15 px-4 py-3 text-sm font-bold text-red-200 ring-1 ring-red-400/30">
-                        {error.message}
+                        {orderError}
                     </p>
                 )}
 
@@ -177,7 +183,7 @@ const OrderSheet = ({ item, extras, onClose }: Props) => {
                     onClick={handleClose}
                     className="mt-3 w-full py-2 text-sm font-bold text-grape-300 transition hover:text-white"
                 >
-                    Not now
+                    {t('sheet.notNow')}
                 </button>
             </div>
         </>

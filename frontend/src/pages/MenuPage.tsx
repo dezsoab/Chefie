@@ -9,6 +9,7 @@ import Logo from '../components/Logo'
 import Sparkles from '../components/Sparkles'
 import ChefNav from '../components/ChefNav'
 import { useIsChef } from '../lib/useIsChef'
+import { useT } from '../i18n'
 
 type CardProps = {
     item: MenuItemDto
@@ -17,6 +18,7 @@ type CardProps = {
 }
 
 const MenuItemCard = ({ item, delay, onSelect }: CardProps) => {
+    const t = useT()
     const soldOut = item.available === 0
     const lowStock = item.available !== null && item.available > 0 && item.available <= 3
     const plenty = item.available !== null && item.available > 3
@@ -35,12 +37,12 @@ const MenuItemCard = ({ item, delay, onSelect }: CardProps) => {
                         <h3 className="font-display text-[22px] font-semibold leading-tight text-white">{item.name}</h3>
                         {lowStock && (
                             <span className="rounded-full bg-sun-400 px-2.5 py-0.5 text-xs font-extrabold text-grape-950">
-                                Only {item.available} left
+                                {t('menu.onlyLeft', { count: item.available ?? 0 })}
                             </span>
                         )}
                         {plenty && (
                             <span className="rounded-full bg-sun-400/15 px-2.5 py-0.5 text-xs font-bold text-sun-300">
-                                {item.available} left
+                                {t('menu.left', { count: item.available ?? 0 })}
                             </span>
                         )}
                     </div>
@@ -60,7 +62,7 @@ const MenuItemCard = ({ item, delay, onSelect }: CardProps) => {
             </div>
             {soldOut && (
                 <span className="absolute right-20 top-1/2 -translate-y-1/2 -rotate-[9deg] rounded-xl border-[3px] border-sun-400 bg-grape-950/80 px-3 py-1 font-display text-lg font-bold tracking-widest text-sun-400">
-                    SOLD OUT
+                    {t('menu.soldOut')}
                 </span>
             )}
         </button>
@@ -75,6 +77,7 @@ const MenuPage = () => {
     })
     const [selectedItem, setSelectedItem] = useState<MenuItemDto | null>(null)
     const isChef = useIsChef()
+    const t = useT()
 
     if (data === null) return <KitchenClosed />
 
@@ -106,9 +109,9 @@ const MenuPage = () => {
                 </header>
 
                 <div className="mt-9 animate-rise">
-                    <h1 className="font-display text-[44px] font-bold leading-[1.05] text-puffy">What's it gonna be?</h1>
+                    <h1 className="font-display text-[44px] font-bold leading-[1.05] text-puffy">{t('menu.title')}</h1>
                     <p className="mt-4 text-[15px] leading-relaxed text-grape-200">
-                        Tap something to order. Your number pops up on the TV when it's ready.
+                        {t('menu.subtitle')}
                     </p>
                 </div>
 
@@ -122,14 +125,14 @@ const MenuPage = () => {
 
                 {isError && (
                     <div className="mt-10 rounded-[28px] bg-red-500/10 p-5 ring-1 ring-red-400/30">
-                        <p className="font-display text-xl font-semibold text-red-100">The menu didn't load</p>
+                        <p className="font-display text-xl font-semibold text-red-100">{t('menu.loadError')}</p>
                         <p className="mt-1 text-sm text-red-200/80">{error.message}</p>
                         <button
                             type="button"
                             onClick={() => refetch()}
                             className="mt-4 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/15"
                         >
-                            Try again
+                            {t('common.tryAgain')}
                         </button>
                     </div>
                 )}

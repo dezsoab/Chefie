@@ -1,5 +1,5 @@
 import { csrfHeaders } from './csrf'
-import { errorMessage } from './http'
+import { errorMessage, loadFailed, saveFailed } from './http'
 
 export type IngredientAdminDto = {
     id: number
@@ -66,14 +66,14 @@ async function send(url: string, method: string, body?: unknown): Promise<void> 
         body: body !== undefined ? JSON.stringify(body) : undefined,
     })
     if (!response.ok) {
-        throw new Error(await errorMessage(response, `Saving failed (${response.status})`))
+        throw new Error(await errorMessage(response, saveFailed(response)))
     }
 }
 
 export async function fetchSetup(eventId: number): Promise<SetupDto> {
     const response = await fetch(`/api/admin/events/${eventId}/setup`)
     if (!response.ok) {
-        throw new Error(await errorMessage(response, `Loading the setup failed (${response.status})`))
+        throw new Error(await errorMessage(response, loadFailed(response)))
     }
     return await response.json()
 }

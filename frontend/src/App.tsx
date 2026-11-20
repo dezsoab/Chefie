@@ -8,17 +8,18 @@ import LoginPage from './components/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Navigate, Route, Routes } from 'react-router';
 import BoardPage from './components/BoardPage';
+import { ChefScope } from './i18n';
 
 function App() {
   return (
     <Routes>
-      <Route path="/kitchen" element={<ProtectedRoute><KitchenPage /></ProtectedRoute>} />
-      <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-      <Route path="/admin/setup" element={<ProtectedRoute><SetupRedirect /></ProtectedRoute>} />
-      <Route path="/admin/events/:eventId/setup" element={<ProtectedRoute><SetupPage /></ProtectedRoute>} />
+      <Route path="/kitchen" element={<ChefScope><ProtectedRoute><KitchenPage /></ProtectedRoute></ChefScope>} />
+      <Route path="/admin" element={<ChefScope><ProtectedRoute><AdminPage /></ProtectedRoute></ChefScope>} />
+      <Route path="/admin/setup" element={<ChefScope><ProtectedRoute><SetupRedirect /></ProtectedRoute></ChefScope>} />
+      <Route path="/admin/events/:eventId/setup" element={<ChefScope><ProtectedRoute><SetupPage /></ProtectedRoute></ChefScope>} />
       <Route path="/" element={<MenuPage />} />
       <Route path="/orders/:id" element={<OrderStatusPage />} />
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<ChefScope><LoginPage /></ChefScope>} />
       <Route path="/board" element={<BoardPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

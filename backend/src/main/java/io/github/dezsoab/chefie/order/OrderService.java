@@ -48,10 +48,10 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderStatusDto getOrderStatus(Long id, UUID guestToken) {
-        CustomerOrder customerOrder = orderRepository.findById(id).orElseThrow(() -> new NotFoundException("Order not found."));
+        CustomerOrder customerOrder = orderRepository.findById(id).orElseThrow(() -> new NotFoundException("ORDER_NOT_FOUND"));
 
         if (!guestToken.equals(customerOrder.getGuestToken())) {
-            throw new NotFoundException("Order not found.");
+            throw new NotFoundException("ORDER_NOT_FOUND");
         }
 
         int ordersAhead = 0;
@@ -59,7 +59,7 @@ public class OrderService {
             ordersAhead = (int) orderRepository.countByEventIdAndStatusInAndNumberLessThan(customerOrder.getEvent().getId(), List.of(OrderStatus.QUEUED, OrderStatus.COOKING), customerOrder.getNumber());
         }
 
-        return new OrderStatusDto(customerOrder.getId(), customerOrder.getEvent().getId(), customerOrder.getNumber(), customerOrder.getMenuItem().getName(), customerOrder.getStatus(), ordersAhead);
+        return new OrderStatusDto(customerOrder.getId(), customerOrder.getEvent().getId(), customerOrder.getNumber(), customerOrder.getItemName(), customerOrder.getStatus(), ordersAhead);
     }
 
     @Transactional(readOnly = true)
@@ -71,29 +71,39 @@ public class OrderService {
 
         return activeOrdersForKitchen.stream()
                 .map(order -> toKitchenDto(order,
-                        recipes.getOrDefault(order.getMenuItem().getId(), List.of()),
+                        order.getMenuItem() == null ? List.<Portion>of() : recipes.getOrDefault(order.getMenuItem().getId(), List.of()),
                         extrasByOrder.getOrDefault(order.getId(), List.of())))
                 .toList();
     }
 
     @Transactional
     public KitchenOrderDto changeStatus(Long id, OrderStatus nextOrderStatus) {
-        CustomerOrder customerOrder = orderRepository.findById(id).orElseThrow(() -> new NotFoundException("Customer order not found."));
+        CustomerOrder customerOrder = orderRepository.findById(id).orElseThrow(() -> new NotFoundException("ORDER_NOT_FOUND"));
 
         customerOrder.changeStatus(nextOrderStatus);
 
         List<OrderExtra> extras = orderExtraRepository.findWithIngredientByOrderIds(List.of(id));
 
         if (nextOrderStatus == OrderStatus.CANCELLED) {
-            menuService.releaseStock(customerOrder.getMenuItem());
+            if (customerOrder.getMenuItem() != null) {
+                menuService.releaseStock(customerOrder.getMenuItem());
+            }
             for (OrderExtra extra : extras) {
                 menuService.releaseIngredient(extra.getIngredient().getId(), extra.getAmount());
             }
         }
 
-        List<Portion> recipe = menuService.getPortionsByMenuItem(customerOrder.getEvent().getId())
-                .getOrDefault(customerOrder.getMenuItem().getId(), List.of());
+        List<Portion> recipe = customerOrder.getMenuItem() == null
+                ? List.of()
+                : menuService.getPortionsByMenuItem(customerOrder.getEvent().getId())
+                        .getOrDefault(customerOrder.getMenuItem().getId(), List.of());
         return toKitchenDto(customerOrder, recipe, extras.stream().map(this::toPortion).toList());
+    }
+
+    @Transactional
+    public void deleteAllForEvent(Long eventId) {
+        orderExtraRepository.deleteAllForEvent(eventId);
+        orderRepository.deleteAllForEvent(eventId);
     }
 
     private Map<Long, List<Portion>> extrasByOrder(List<Long> orderIds) {
@@ -113,6 +123,6 @@ public class OrderService {
 
     private KitchenOrderDto toKitchenDto(CustomerOrder order, List<Portion> recipe, List<Portion> extras) {
         return new KitchenOrderDto(order.getId(), order.getNumber(), order.getGuestName(), order.getNote(),
-                order.getMenuItem().getName(), recipe, extras, order.getStatus(), order.getCreatedAt());
+                order.getItemName(), recipe, extras, order.getStatus(), order.getCreatedAt());
     }
 }
