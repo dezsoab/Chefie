@@ -18,9 +18,17 @@ const OrderCard = ({ order }: Props) => {
         >
             <h3 className="text-3xl font-bold">#{order.number}</h3>
             <p className="font-medium">{order.itemName}</p>
+            {order.extras.length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                    {order.extras.map((extra) => (
+                        <span key={extra} className="rounded-full bg-green-100 px-2 py-0.5 text-sm font-semibold text-green-800">
+                            + {extra}
+                        </span>
+                    ))}
+                </div>
+            )}
             <p className="text-sm text-gray-600">{order.guestName}</p>
             {order.note && <p className="mt-1 rounded bg-yellow-100 px-2 text-sm">{order.note}</p>}
-
         </div>
     )
 }

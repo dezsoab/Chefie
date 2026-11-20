@@ -3,23 +3,28 @@ package io.github.dezsoab.chefie.order;
 import io.github.dezsoab.chefie.common.NotFoundException;
 import io.github.dezsoab.chefie.event.Event;
 import io.github.dezsoab.chefie.event.EventService;
+import io.github.dezsoab.chefie.menu.Ingredient;
 import io.github.dezsoab.chefie.menu.MenuItem;
 import io.github.dezsoab.chefie.menu.MenuService;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
     private final OrderRepository orderRepository;
+    private final OrderExtraRepository orderExtraRepository;
     private final EventService eventService;
     private final MenuService menuService;
 
-    public OrderService(OrderRepository orderRepository, EventService eventService, MenuService menuService) {
+    public OrderService(OrderRepository orderRepository, OrderExtraRepository orderExtraRepository,
+                        EventService eventService, MenuService menuService) {
         this.orderRepository = orderRepository;
+        this.orderExtraRepository = orderExtraRepository;
         this.eventService = eventService;
         this.menuService = menuService;
     }
@@ -28,10 +33,15 @@ public class OrderService {
     public OrderCreatedResponse placeOrder(PlaceOrderRequest placeOrderRequest) {
         Event openEvent = eventService.getOpenEvent();
         MenuItem orderableMenuItem = menuService.getOrderableMenuItem(placeOrderRequest.menuItemId(), openEvent);
+        List<Ingredient> extras = menuService.getOrderableExtras(placeOrderRequest.extraIngredientIds(), openEvent);
 
-        menuService.reserveStock(orderableMenuItem);
+        menuService.reserveStock(orderableMenuItem, extras);
 
         CustomerOrder customerOrder = orderRepository.save(new CustomerOrder(openEvent, orderableMenuItem, eventService.nextOrderNumber(openEvent.getId()), placeOrderRequest.guestName(), placeOrderRequest.note()));
+        orderExtraRepository.saveAll(extras.stream()
+                .map(extra -> new OrderExtra(customerOrder, extra, extra.getExtraAmount()))
+                .toList());
+
         return new OrderCreatedResponse(customerOrder.getId(), customerOrder.getNumber(), customerOrder.getGuestToken());
     }
 
@@ -55,23 +65,46 @@ public class OrderService {
     public List<KitchenOrderDto> getKitchenOrders() {
         Event openEvent = eventService.getOpenEvent();
         List<CustomerOrder> activeOrdersForKitchen = orderRepository.findActiveForKitchen(openEvent.getId(), List.of(OrderStatus.QUEUED, OrderStatus.COOKING, OrderStatus.READY));
+        Map<Long, List<String>> extrasByOrder = extraNamesByOrder(activeOrdersForKitchen.stream().map(CustomerOrder::getId).toList());
 
         return activeOrdersForKitchen.stream()
-                .map(order -> new KitchenOrderDto(order.getId(), order.getNumber(), order.getGuestName(), order.getNote(), order.getMenuItem().getName(), order.getStatus(), order.getCreatedAt()))
+                .map(order -> toKitchenDto(order, extrasByOrder.getOrDefault(order.getId(), List.of())))
                 .toList();
     }
 
     @Transactional
-    public KitchenOrderDto changeStatus(Long id, @NotNull OrderStatus nextOrderStatus) {
+    public KitchenOrderDto changeStatus(Long id, OrderStatus nextOrderStatus) {
         CustomerOrder customerOrder = orderRepository.findById(id).orElseThrow(() -> new NotFoundException("Customer order not found."));
 
         customerOrder.changeStatus(nextOrderStatus);
 
+        List<OrderExtra> extras = orderExtraRepository.findWithIngredientByOrderIds(List.of(id));
+
         if (nextOrderStatus == OrderStatus.CANCELLED) {
             menuService.releaseStock(customerOrder.getMenuItem());
+            for (OrderExtra extra : extras) {
+                menuService.releaseIngredient(extra.getIngredient().getId(), extra.getAmount());
+            }
         }
 
-        return new KitchenOrderDto(id, customerOrder.getNumber(), customerOrder.getGuestName(), customerOrder.getNote(), customerOrder.getMenuItem().getName(), customerOrder.getStatus(), customerOrder.getCreatedAt());
+        List<String> extraNames = extras.stream().map(extra -> extra.getIngredient().getName()).toList();
+        return toKitchenDto(customerOrder, extraNames);
     }
 
+    // one query for the extras of all orders, grouped by order id
+    private Map<Long, List<String>> extraNamesByOrder(List<Long> orderIds) {
+        if (orderIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return orderExtraRepository.findWithIngredientByOrderIds(orderIds).stream()
+                .collect(Collectors.groupingBy(
+                        extra -> extra.getOrder().getId(),
+                        Collectors.mapping(extra -> extra.getIngredient().getName(), Collectors.toList())));
+    }
+
+    private KitchenOrderDto toKitchenDto(CustomerOrder order, List<String> extras) {
+        return new KitchenOrderDto(order.getId(), order.getNumber(), order.getGuestName(), order.getNote(),
+                order.getMenuItem().getName(), extras, order.getStatus(), order.getCreatedAt());
+    }
 }

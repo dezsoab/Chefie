@@ -3,7 +3,8 @@ import { csrfHeaders } from "./csrf";
 export type PlaceOrderRequest = {
     menuItemId: number,
     guestName: string,
-    note: string | null;
+    note: string | null,
+    extraIngredientIds: number[];
 }
 
 export type OrderCreatedResponse = {

@@ -8,10 +8,10 @@ import io.github.dezsoab.chefie.event.EventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 
@@ -48,7 +48,12 @@ public class MenuService {
                 .map(menu -> toMenuDto(menu, itemsByMenu.getOrDefault(menu.getId(), List.of()), linesByItem))
                 .toList();
 
-        return new MenuResponse(event.id(), event.name(), menuDtos, List.of());
+        List<MenuResponse.ExtraDto> extras = ingredientRepository
+                .findByEventIdAndExtraAmountNotNullOrderByName(event.id()).stream()
+                .map(this::toExtraDto)
+                .toList();
+
+        return new MenuResponse(event.id(), event.name(), menuDtos, extras);
     }
 
     private MenuResponse.MenuDto toMenuDto(Menu menu, List<MenuItem> items, Map<Long, List<RecipeLine>> linesByItem) {
@@ -63,6 +68,13 @@ public class MenuService {
                 .map(line -> line.getIngredient().getName())
                 .toList();
         return new MenuResponse.MenuItemDto(menuItem.getId(), menuItem.getName(), menuItem.getDescription(), ingredients, calculateAvailable(lines));
+    }
+
+    private MenuResponse.ExtraDto toExtraDto(Ingredient ingredient) {
+        Integer available = ingredient.getStock() == null
+                ? null
+                : ingredient.getStock() / ingredient.getExtraAmount();
+        return new MenuResponse.ExtraDto(ingredient.getId(), ingredient.getName(), available);
     }
 
     private Integer calculateAvailable(List<RecipeLine> lines) {
@@ -92,12 +104,37 @@ public class MenuService {
         return menuItem;
     }
 
-    public void reserveStock(MenuItem item) {
-        List<RecipeLine> recipeLines = recipeLineRepository.findByMenuItemId(item.getId()).stream().sorted(Comparator.comparing(line -> line.getIngredient().getId())).toList();
-        for (RecipeLine line : recipeLines) {
-            int stockReserved = ingredientRepository.reserve(line.getId().getIngredientId(), line.getAmount());
+    public List<Ingredient> getOrderableExtras(List<Long> ingredientIds, Event event) {
+        if (ingredientIds == null || ingredientIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> distinctIds = ingredientIds.stream().distinct().toList();
+        List<Ingredient> extras = ingredientRepository.findAllById(distinctIds);
+
+        boolean allValid = extras.size() == distinctIds.size() && extras.stream()
+                .allMatch(ingredient -> ingredient.getExtraAmount() != null
+                        && ingredient.getEvent().getId().equals(event.getId()));
+        if (!allValid) {
+            throw new NotFoundException("Extra is not found");
+        }
+
+        return extras;
+    }
+
+    public void reserveStock(MenuItem item, List<Ingredient> extras) {
+        Map<Long, Integer> amounts = new TreeMap<>();
+        for (RecipeLine line : recipeLineRepository.findByMenuItemId(item.getId())) {
+            amounts.merge(line.getId().getIngredientId(), line.getAmount(), Integer::sum);
+        }
+        for (Ingredient extra : extras) {
+            amounts.merge(extra.getId(), extra.getExtraAmount(), Integer::sum);
+        }
+
+        for (Map.Entry<Long, Integer> entry : amounts.entrySet()) {
+            int stockReserved = ingredientRepository.reserve(entry.getKey(), entry.getValue());
             if (stockReserved == 0) {
-                throw new ConflictException(item.getName() + " is sold out");
+                throw new ConflictException(item.getName() + " with these extras is sold out");
             }
         }
     }
@@ -108,5 +145,9 @@ public class MenuService {
         for (RecipeLine recipeLine : recipeLines) {
             ingredientRepository.release(recipeLine.getIngredient().getId(), recipeLine.getAmount());
         }
+    }
+
+    public void releaseIngredient(Long ingredientId, int amount) {
+        ingredientRepository.release(ingredientId, amount);
     }
 }

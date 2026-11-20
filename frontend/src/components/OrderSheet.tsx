@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { MenuItemDto } from '../api/menu'
+import type { ExtraDto, MenuItemDto } from '../api/menu'
 import { placeOrder } from '../api/orders'
 import { useNavigate } from 'react-router'
 
 type Props = {
     item: MenuItemDto | null
+    extras: ExtraDto[]
     onClose: () => void
 }
 
-const OrderSheet = ({ item, onClose }: Props) => {
+const OrderSheet = ({ item, extras, onClose }: Props) => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
@@ -19,6 +20,18 @@ const OrderSheet = ({ item, onClose }: Props) => {
         localStorage.getItem('chefie.guestName') ?? ''
     )
     const [note, setNote] = useState('')
+    const [extraIds, setExtraIds] = useState<number[]>([])
+
+    const toggleExtra = (id: number) => {
+        setExtraIds((current) =>
+            current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
+        )
+    }
+
+    const handleClose = () => {
+        setExtraIds([])
+        onClose()
+    }
 
     const { mutate, isPending, error } = useMutation({
         mutationFn: placeOrder,
@@ -26,6 +39,7 @@ const OrderSheet = ({ item, onClose }: Props) => {
             localStorage.setItem('chefie.guestName', guestName.trim())
             localStorage.setItem(`chefie.order.${order.id}`, order.guestToken)
             setNote('')
+            setExtraIds([])
             onClose();
             navigate(`/orders/${order.id}`)
         },
@@ -38,13 +52,14 @@ const OrderSheet = ({ item, onClose }: Props) => {
             menuItemId: item.id,
             guestName: guestName.trim(),
             note: note.trim() || null,
+            extraIngredientIds: extraIds,
         })
     }
 
     return (
         <>
             <div
-                onClick={onClose}
+                onClick={handleClose}
                 className={`fixed inset-0 bg-black/40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
             />
             <div
@@ -52,6 +67,29 @@ const OrderSheet = ({ item, onClose }: Props) => {
             >
                 <h2 className="text-xl font-bold">{item?.name}</h2>
                 <p className="text-sm text-gray-600">{item?.ingredients.join(', ')}</p>
+
+                {extras.length > 0 && (
+                    <div className="mt-4">
+                        <p className="text-sm font-semibold">Extras</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            {extras.map((extra) => {
+                                const selected = extraIds.includes(extra.ingredientId)
+                                return (
+                                    <button
+                                        key={extra.ingredientId}
+                                        type="button"
+                                        onClick={() => toggleExtra(extra.ingredientId)}
+                                        disabled={extra.available === 0}
+                                        className={`rounded-full border px-3 py-1.5 text-sm font-medium transition disabled:opacity-40 ${selected ? 'border-green-600 bg-green-600 text-white' : 'border-gray-300 bg-white text-gray-700'
+                                            }`}
+                                    >
+                                        {selected ? '✓' : '+'} {extra.name}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 <input
                     value={guestName}
@@ -74,7 +112,7 @@ const OrderSheet = ({ item, onClose }: Props) => {
                 >
                     {isPending ? 'Ordering…' : 'Order'}
                 </button>
-                <button onClick={onClose} className="mt-2 w-full py-2 text-gray-500">
+                <button onClick={handleClose} className="mt-2 w-full py-2 text-gray-500">
                     Cancel
                 </button>
 

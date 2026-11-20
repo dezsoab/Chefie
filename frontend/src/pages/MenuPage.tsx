@@ -42,7 +42,7 @@ const MenuPage = () => {
                 </>
             )}
 
-            <OrderSheet item={selectedItem} onClose={() => setSelectedItem(null)} />
+            <OrderSheet item={selectedItem} onClose={() => setSelectedItem(null)} extras={data?.extras ?? []} />
         </div>
     )
 }

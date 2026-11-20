@@ -4,6 +4,7 @@ export type KitchenOrderDto = {
     id: number,
     guestName: string,
     itemName: string,
+    extras: string[],
     note: string | null,
     status: OrderStatus,
     createdAt: string;

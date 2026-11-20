@@ -13,5 +13,4 @@ public interface OrderRepository extends JpaRepository<CustomerOrder, Long> {
     @Query("select co from CustomerOrder co join fetch co.menuItem where co.event.id =:eventId and co.status in :statuses order by co.number")
     List<CustomerOrder> findActiveForKitchen(@Param("eventId") Long eventId, @Param("statuses") List<OrderStatus> statuses);
 
-    List<CustomerOrder> id(Long id);
 }
