@@ -71,15 +71,15 @@ const EmptyState = ({ text }: { text: string }) => (
 type QrCardProps = { step: number; title: string; caption: string; icon: LucideIcon; value: string | null }
 
 const QrCard = ({ step, title, caption, icon: Icon, value }: QrCardProps) => (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-[28px] bg-white p-4 text-grape-950 shadow-[0_20px_50px_-20px_rgb(0_0_0/0.8)]">
-        <span className="flex items-center gap-2 font-display text-xl font-semibold">
-            <span className="flex size-8 items-center justify-center rounded-xl bg-grape-700 text-base font-bold text-white">{step}</span>
+    <div className="flex flex-col items-center gap-3 rounded-[28px] bg-white p-5 text-grape-950 shadow-[0_20px_50px_-20px_rgb(0_0_0/0.8)]">
+        <span className="flex items-center gap-2 text-center font-display text-xl font-semibold leading-tight">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-grape-700 text-base font-bold text-white">{step}</span>
             {title}
         </span>
         {value ? (
-            <QRCodeSVG value={value} size={176} fgColor="#16043a" className="h-[min(176px,21vh)] w-auto" />
+            <QRCodeSVG value={value} size={200} fgColor="#16043a" className="h-[min(200px,22vh)] w-auto" />
         ) : (
-            <span className="block size-[min(176px,21vh)] animate-pulse rounded-2xl bg-grape-100" />
+            <span className="block size-[min(200px,22vh)] animate-pulse rounded-2xl bg-grape-100" />
         )}
         <span className="flex max-w-full items-center gap-1.5 truncate text-sm font-bold text-grape-700">
             <Icon size={16} strokeWidth={2.4} className="shrink-0" />
@@ -154,7 +154,7 @@ const BoardPage = () => {
                     )}
                 </section>
 
-                <aside className="flex min-h-0 flex-col gap-5">
+                <aside className="flex min-h-0 flex-col justify-center gap-5">
                     <QrCard step={1} title={t('board.wifi')} icon={Wifi} caption={wifi?.wifiSsid ?? t('common.loading')} value={wifiText} />
                     <QrCard step={2} title={t('board.scan')} icon={Smartphone} caption={t('board.opensMenu')} value={menuUrl} />
                 </aside>

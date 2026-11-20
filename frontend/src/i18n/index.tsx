@@ -35,9 +35,8 @@ const ChefLanguageContext = createContext<ChefLanguage | null>(null)
 
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
     const { data: event } = useQuery({ queryKey: ['current-event'], queryFn: fetchCurrentEvent, refetchInterval: 30000 })
-    const eventLanguage: Language = isLanguage(event?.language) ? event.language : browserLanguage()
-
     const [chefLanguage, setChefLanguageState] = useState<Language>(readChefLanguage)
+    const eventLanguage: Language = isLanguage(event?.language) ? event.language : chefLanguage
 
     const setChefLanguage = useCallback((language: Language) => {
         try {
