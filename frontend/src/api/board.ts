@@ -17,6 +17,10 @@ export async function fetchBoard(): Promise<BoardEntry[]> {
         method: "GET"
     })
 
+    if (response.status === 404) {
+        return [];
+    }
+
     if (!response.ok) {
         throw new Error("Fetching board failed: " + response.status)
     }

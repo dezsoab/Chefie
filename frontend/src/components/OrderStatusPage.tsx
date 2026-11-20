@@ -1,31 +1,205 @@
+import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useParams } from 'react-router'
-import { fetchOrder } from '../api/orders'
+import { Link, useNavigate, useParams } from 'react-router'
+import { Bell, Check, ChevronLeft, Clock, Flame, SearchX, X, type LucideIcon } from 'lucide-react'
+import { fetchOrder, type OrderStatus } from '../api/orders'
+import { forgetOrder, isFinalStatus, readOrderToken } from '../lib/orders'
+import { playChime, vibrate } from '../lib/sound'
+import Sparkles from './Sparkles'
+
+const steps: { status: OrderStatus; label: string; icon: LucideIcon }[] = [
+    { status: 'QUEUED', label: 'Ordered', icon: Clock },
+    { status: 'COOKING', label: 'Cooking', icon: Flame },
+    { status: 'READY', label: 'Ready', icon: Bell },
+]
+
+const stepIndex: Record<OrderStatus, number> = {
+    QUEUED: 0,
+    COOKING: 1,
+    READY: 2,
+    PICKED_UP: 3,
+    CANCELLED: -1,
+}
+
+const Shell = ({ children }: { children: ReactNode }) => (
+    <div className="relative min-h-dvh overflow-hidden bg-stage">
+        <Sparkles />
+        <div className="relative mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-[calc(env(safe-area-inset-top)+1rem)]">
+            <Link
+                to="/"
+                className="-ml-2 flex w-fit items-center gap-1 rounded-full px-3 py-2 text-sm font-bold text-grape-200 transition hover:bg-white/5 hover:text-white"
+            >
+                <ChevronLeft size={18} strokeWidth={2.6} />
+                Menu
+            </Link>
+            {children}
+        </div>
+    </div>
+)
+
+type InfoCardProps = { icon: LucideIcon; title: string; text: string; highlight?: boolean }
+
+const InfoCard = ({ icon: Icon, title, text, highlight = false }: InfoCardProps) => (
+    <div
+        className={`mt-8 flex animate-rise items-start gap-4 rounded-[28px] p-5 ${highlight ? 'bg-sun-400 text-grape-950' : 'border border-white/10 bg-white/[0.06] text-white'}`}
+    >
+        <span
+            className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${highlight ? 'bg-grape-950 text-sun-400' : 'bg-white/10 text-sun-300'}`}
+        >
+            <Icon size={24} strokeWidth={2.3} />
+        </span>
+        <span>
+            <span className="block font-display text-xl font-semibold leading-tight">{title}</span>
+            <span className={`mt-1 block text-sm leading-relaxed ${highlight ? 'font-semibold text-grape-800' : 'text-grape-200'}`}>{text}</span>
+        </span>
+    </div>
+)
+
+const Stepper = ({ current }: { current: number }) => (
+    <ol className="mt-10 flex items-start">
+        {steps.map((step, index) => {
+            const Icon = step.icon
+            const done = index < current
+            const active = index === current
+            return (
+                <li key={step.status} className="flex flex-1 items-start last:flex-none">
+                    <div className="flex w-20 flex-col items-center gap-2">
+                        <span
+                            className={`flex size-14 items-center justify-center rounded-2xl transition-all duration-500 ${active
+                                ? 'scale-110 bg-sun-400 text-grape-950 shadow-[0_6px_0_var(--color-sun-700),0_18px_40px_-12px_rgb(255_209_46/0.7)]'
+                                : done
+                                    ? 'bg-grape-500 text-white'
+                                    : 'bg-white/[0.06] text-grape-300 ring-1 ring-white/10'
+                                }`}
+                        >
+                            {done ? <Check size={24} strokeWidth={3} /> : <Icon size={24} strokeWidth={2.3} className={active && step.status === 'COOKING' ? 'animate-pulse' : ''} />}
+                        </span>
+                        <span className={`text-center text-xs font-extrabold ${active ? 'text-sun-300' : done ? 'text-grape-100' : 'text-grape-300'}`}>
+                            {step.label}
+                        </span>
+                    </div>
+                    {index < steps.length - 1 && (
+                        <span className="mt-7 h-1 flex-1 overflow-hidden rounded-full bg-white/10">
+                            <span className={`block h-full rounded-full bg-grape-400 transition-all duration-700 ${index < current ? 'w-full' : 'w-0'}`} />
+                        </span>
+                    )}
+                </li>
+            )
+        })}
+    </ol>
+)
+
+const ReadyCard = () => (
+    <div className="mt-8 animate-ready">
+        <div className="animate-glow rounded-[32px] bg-sun-400 p-7 text-center text-grape-950">
+            <span className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-grape-950 text-sun-400">
+                <Bell size={32} strokeWidth={2.3} className="animate-wiggle" />
+            </span>
+            <p className="mt-4 font-display text-6xl font-bold">Ready!</p>
+            <p className="mt-2 text-base font-bold text-grape-800">Come grab it while it's hot.</p>
+        </div>
+    </div>
+)
 
 const OrderStatusPage = () => {
     const { id } = useParams()
+    const navigate = useNavigate()
+    const token = useMemo(() => readOrderToken(id), [id])
 
-    const token = localStorage.getItem(`chefie.order.${id}`)
-
-    const { isPending, error, data } = useQuery({
+    const { data, isPending, error } = useQuery({
         queryKey: ['order', id],
         queryFn: () => fetchOrder(id!, token!),
-        refetchInterval: 3000,
-        enabled: !!token
+        enabled: !!token,
+        refetchInterval: (query) => {
+            const order = query.state.data
+            return order === null || isFinalStatus(order?.status) ? false : 3000
+        },
     })
 
-    if (!token) return <p>This order isn't on this phone.</p>
+    const previousStatus = useRef<OrderStatus | undefined>(undefined)
+    const status = data?.status
+
+    useEffect(() => {
+        if (status === 'READY' && previousStatus.current !== undefined && previousStatus.current !== 'READY') {
+            playChime()
+            vibrate([180, 90, 180, 90, 320])
+        }
+        previousStatus.current = status
+    }, [status])
+
+    useEffect(() => {
+        if (status !== 'PICKED_UP' || !id) return
+        forgetOrder(id)
+        const timer = window.setTimeout(() => navigate('/', { replace: true }), 3500)
+        return () => window.clearTimeout(timer)
+    }, [status, id, navigate])
+
+    if (!token || data === null) {
+        return (
+            <Shell>
+                <InfoCard icon={SearchX} title="Order not found" text="This order isn't saved on this phone. Order from this phone to follow it here." />
+            </Shell>
+        )
+    }
+
+    if (error) {
+        return (
+            <Shell>
+                <InfoCard icon={X} title="Connection hiccup" text={error.message} />
+            </Shell>
+        )
+    }
+
+    if (isPending || !data) {
+        return (
+            <Shell>
+                <div className="mt-16 h-72 animate-pulse rounded-[32px] bg-white/[0.06]" />
+            </Shell>
+        )
+    }
+
+    const current = stepIndex[data.status]
 
     return (
-        <div>
-            {isPending && <p>Loading…</p>}
-            {error && error.message}
-            {data && <div>
-                <h1>{data.itemName}</h1>
-                <p className="text-6xl font-bold">#{data.number}</p>
-                <p>{data.status} and currently {data.ordersAhead} order(s) ahead.</p>
-            </div>}
-        </div>
+        <Shell>
+            <div className="mt-6 animate-rise text-center">
+                <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-grape-300">Your number</p>
+                <p className="mt-2 animate-pop font-display text-[120px] font-bold leading-none text-puffy">#{data.number}</p>
+                <p className="mt-5 font-display text-2xl font-semibold text-white">{data.itemName}</p>
+            </div>
+
+            {data.status === 'CANCELLED' && (
+                <InfoCard icon={X} title="This order was cancelled" text="Talk to the chef, or order something new from the menu." />
+            )}
+
+            {data.status === 'PICKED_UP' && (
+                <InfoCard icon={Check} title="Enjoy your food!" text="Taking you back to the menu…" highlight />
+            )}
+
+            {current >= 0 && current <= 2 && <Stepper current={current} />}
+
+            {data.status === 'QUEUED' && (
+                <InfoCard
+                    key="queued"
+                    icon={Clock}
+                    title={data.ordersAhead > 0 ? `${data.ordersAhead} order${data.ordersAhead > 1 ? 's' : ''} ahead of you` : "You're next!"}
+                    text="We'll ring when it's ready. Keep this page open, or check the TV."
+                />
+            )}
+
+            {data.status === 'COOKING' && (
+                <InfoCard key="cooking" icon={Flame} title="Cooking right now" text="Almost there. Get ready to grab it." />
+            )}
+
+            {data.status === 'READY' && <ReadyCard />}
+
+            <Link
+                to="/"
+                className="mt-auto pt-10 text-center text-sm font-bold text-grape-300 transition hover:text-white"
+            >
+                Order another one
+            </Link>
+        </Shell>
     )
 }
 

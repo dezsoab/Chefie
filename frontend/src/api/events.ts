@@ -1,6 +1,7 @@
 import { csrfHeaders } from "./csrf";
+import { errorMessage } from "./http";
 
-export type EventStatus = "OPEN" | "CLOSED" | "DRAFT";
+export type EventStatus = "DRAFT" | "ON_HOLD" | "OPEN" | "CLOSED";
 
 export type EventDto = {
     id: number;
@@ -17,43 +18,40 @@ export async function fetchEvents(): Promise<EventDto[]> {
     return await (response.json() as Promise<EventDto[]>);
 }
 
-export async function createEvent(name: string): Promise<EventDto> {
-    const response = await fetch('api/admin/events', {
+export async function fetchCurrentEvent(): Promise<EventDto | null> {
+    const response = await fetch('/api/events/current');
+    if (response.status === 404) {
+        return null;
+    }
+    if (!response.ok) {
+        throw new Error('Failed to fetch the current event');
+    }
+    return await response.json();
+}
+
+async function changeEvent(url: string, fallback: string, body?: unknown): Promise<EventDto> {
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
             ...(await csrfHeaders())
         },
-        body: JSON.stringify({ name }),
-    })
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
     if (!response.ok) {
-        throw new Error('Failed to create event');
+        throw new Error(await errorMessage(response, fallback));
     }
     return await response.json();
 }
 
-export async function openEvent(id: number): Promise<EventDto> {
-    const response = await fetch(`api/admin/events/${id}/open`, {
-        method: 'POST',
-        headers: {
-            ...(await csrfHeaders())
-        }
-    });
-    if (!response.ok) {
-        throw new Error('Failed to open event');
-    }
-    return await response.json();
-}
+export const createEvent = (name: string) =>
+    changeEvent('/api/admin/events', 'Failed to create event', { name });
 
-export async function closeEvent(id: number): Promise<EventDto> {
-    const response = await fetch(`api/admin/events/${id}/close`, {
-        method: 'POST',
-        headers: {
-            ...(await csrfHeaders())
-        }
-    });
-    if (!response.ok) {
-        throw new Error('Failed to close event');
-    }
-    return await response.json();
-}
+export const openEvent = (id: number) =>
+    changeEvent(`/api/admin/events/${id}/open`, 'Failed to open event');
+
+export const holdEvent = (id: number) =>
+    changeEvent(`/api/admin/events/${id}/hold`, 'Failed to put event on hold');
+
+export const closeEvent = (id: number) =>
+    changeEvent(`/api/admin/events/${id}/close`, 'Failed to close event');

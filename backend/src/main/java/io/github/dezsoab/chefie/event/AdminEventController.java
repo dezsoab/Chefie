@@ -26,6 +26,11 @@ public class AdminEventController {
         return eventService.open(id);
     }
 
+    @PostMapping("/{id}/hold")
+    public EventDto hold(@PathVariable Long id) {
+        return eventService.hold(id);
+    }
+
     @PostMapping("/{id}/close")
     public EventDto close(@PathVariable Long id) {
         return eventService.close(id);

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { LogOut } from 'lucide-react'
 import { logout } from '../api/auth'
 import { useNavigate } from 'react-router'
 
@@ -13,7 +14,14 @@ const LogoutButton = () => {
         }
     })
     return (
-        <button className="rounded-lg border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50" onClick={() => mutate()}>Logout</button>
+        <button
+            type="button"
+            onClick={() => mutate()}
+            className="flex items-center gap-2 rounded-full bg-white/[0.06] px-4 py-2 text-sm font-bold text-grape-200 ring-1 ring-white/10 transition hover:bg-white/10 hover:text-white"
+        >
+            <LogOut size={16} strokeWidth={2.4} />
+            Logout
+        </button>
     )
 }
 

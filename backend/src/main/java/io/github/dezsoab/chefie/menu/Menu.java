@@ -19,13 +19,13 @@ public class Menu {
 
     private int sortOrder;
 
-    public Menu(Event event, String name) {
+    public Menu(Event event, String name, int sortOrder) {
         this.event = event;
         this.name = name;
+        this.sortOrder = sortOrder;
     }
 
-    public Menu() {
-
+    protected Menu() {
     }
 
     public Event getEvent() {

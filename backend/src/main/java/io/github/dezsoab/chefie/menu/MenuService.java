@@ -5,9 +5,11 @@ import io.github.dezsoab.chefie.common.NotFoundException;
 import io.github.dezsoab.chefie.event.Event;
 import io.github.dezsoab.chefie.event.EventDto;
 import io.github.dezsoab.chefie.event.EventService;
+import io.github.dezsoab.chefie.event.EventStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -53,7 +55,7 @@ public class MenuService {
                 .map(this::toExtraDto)
                 .toList();
 
-        return new MenuResponse(event.id(), event.name(), menuDtos, extras);
+        return new MenuResponse(event.id(), event.name(), event.status() == EventStatus.OPEN, menuDtos, extras);
     }
 
     private MenuResponse.MenuDto toMenuDto(Menu menu, List<MenuItem> items, Map<Long, List<RecipeLine>> linesByItem) {
@@ -67,14 +69,17 @@ public class MenuService {
         List<String> ingredients = lines.stream()
                 .map(line -> line.getIngredient().getName())
                 .toList();
-        return new MenuResponse.MenuItemDto(menuItem.getId(), menuItem.getName(), menuItem.getDescription(), ingredients, calculateAvailable(lines));
+        List<MenuResponse.RecipeNeedDto> recipe = lines.stream()
+                .map(line -> new MenuResponse.RecipeNeedDto(line.getIngredient().getId(), line.getAmount()))
+                .toList();
+        return new MenuResponse.MenuItemDto(menuItem.getId(), menuItem.getName(), menuItem.getDescription(), ingredients, recipe, calculateAvailable(lines));
     }
 
     private MenuResponse.ExtraDto toExtraDto(Ingredient ingredient) {
         Integer available = ingredient.getStock() == null
                 ? null
                 : ingredient.getStock() / ingredient.getExtraAmount();
-        return new MenuResponse.ExtraDto(ingredient.getId(), ingredient.getName(), available);
+        return new MenuResponse.ExtraDto(ingredient.getId(), ingredient.getName(), available, ingredient.getStock(), ingredient.getExtraAmount());
     }
 
     private Integer calculateAvailable(List<RecipeLine> lines) {
@@ -145,6 +150,17 @@ public class MenuService {
         for (RecipeLine recipeLine : recipeLines) {
             ingredientRepository.release(recipeLine.getIngredient().getId(), recipeLine.getAmount());
         }
+    }
+
+    public Map<Long, List<Portion>> getPortionsByMenuItem(Long eventId) {
+        return recipeLineRepository.findAllForEvent(eventId).stream()
+                .collect(Collectors.groupingBy(
+                        line -> line.getMenuItem().getId(),
+                        Collectors.collectingAndThen(
+                                Collectors.mapping(
+                                        line -> new Portion(line.getIngredient().getName(), line.getAmount(), line.getIngredient().getUnit()),
+                                        Collectors.toList()),
+                                portions -> portions.stream().sorted(Comparator.comparing(Portion::name)).toList())));
     }
 
     public void releaseIngredient(Long ingredientId, int amount) {

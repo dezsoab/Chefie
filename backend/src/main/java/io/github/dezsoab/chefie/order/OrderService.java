@@ -6,6 +6,7 @@ import io.github.dezsoab.chefie.event.EventService;
 import io.github.dezsoab.chefie.menu.Ingredient;
 import io.github.dezsoab.chefie.menu.MenuItem;
 import io.github.dezsoab.chefie.menu.MenuService;
+import io.github.dezsoab.chefie.menu.Portion;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,17 +59,20 @@ public class OrderService {
             ordersAhead = (int) orderRepository.countByEventIdAndStatusInAndNumberLessThan(customerOrder.getEvent().getId(), List.of(OrderStatus.QUEUED, OrderStatus.COOKING), customerOrder.getNumber());
         }
 
-        return new OrderStatusDto(customerOrder.getId(), customerOrder.getNumber(), customerOrder.getMenuItem().getName(), customerOrder.getStatus(), ordersAhead);
+        return new OrderStatusDto(customerOrder.getId(), customerOrder.getEvent().getId(), customerOrder.getNumber(), customerOrder.getMenuItem().getName(), customerOrder.getStatus(), ordersAhead);
     }
 
     @Transactional(readOnly = true)
     public List<KitchenOrderDto> getKitchenOrders() {
-        Event openEvent = eventService.getOpenEvent();
+        Event openEvent = eventService.getActiveEvent();
         List<CustomerOrder> activeOrdersForKitchen = orderRepository.findActiveForKitchen(openEvent.getId(), List.of(OrderStatus.QUEUED, OrderStatus.COOKING, OrderStatus.READY));
-        Map<Long, List<String>> extrasByOrder = extraNamesByOrder(activeOrdersForKitchen.stream().map(CustomerOrder::getId).toList());
+        Map<Long, List<Portion>> extrasByOrder = extrasByOrder(activeOrdersForKitchen.stream().map(CustomerOrder::getId).toList());
+        Map<Long, List<Portion>> recipes = menuService.getPortionsByMenuItem(openEvent.getId());
 
         return activeOrdersForKitchen.stream()
-                .map(order -> toKitchenDto(order, extrasByOrder.getOrDefault(order.getId(), List.of())))
+                .map(order -> toKitchenDto(order,
+                        recipes.getOrDefault(order.getMenuItem().getId(), List.of()),
+                        extrasByOrder.getOrDefault(order.getId(), List.of())))
                 .toList();
     }
 
@@ -87,12 +91,12 @@ public class OrderService {
             }
         }
 
-        List<String> extraNames = extras.stream().map(extra -> extra.getIngredient().getName()).toList();
-        return toKitchenDto(customerOrder, extraNames);
+        List<Portion> recipe = menuService.getPortionsByMenuItem(customerOrder.getEvent().getId())
+                .getOrDefault(customerOrder.getMenuItem().getId(), List.of());
+        return toKitchenDto(customerOrder, recipe, extras.stream().map(this::toPortion).toList());
     }
 
-    // one query for the extras of all orders, grouped by order id
-    private Map<Long, List<String>> extraNamesByOrder(List<Long> orderIds) {
+    private Map<Long, List<Portion>> extrasByOrder(List<Long> orderIds) {
         if (orderIds.isEmpty()) {
             return Map.of();
         }
@@ -100,11 +104,15 @@ public class OrderService {
         return orderExtraRepository.findWithIngredientByOrderIds(orderIds).stream()
                 .collect(Collectors.groupingBy(
                         extra -> extra.getOrder().getId(),
-                        Collectors.mapping(extra -> extra.getIngredient().getName(), Collectors.toList())));
+                        Collectors.mapping(this::toPortion, Collectors.toList())));
     }
 
-    private KitchenOrderDto toKitchenDto(CustomerOrder order, List<String> extras) {
+    private Portion toPortion(OrderExtra extra) {
+        return new Portion(extra.getIngredient().getName(), extra.getAmount(), extra.getIngredient().getUnit());
+    }
+
+    private KitchenOrderDto toKitchenDto(CustomerOrder order, List<Portion> recipe, List<Portion> extras) {
         return new KitchenOrderDto(order.getId(), order.getNumber(), order.getGuestName(), order.getNote(),
-                order.getMenuItem().getName(), extras, order.getStatus(), order.getCreatedAt());
+                order.getMenuItem().getName(), recipe, extras, order.getStatus(), order.getCreatedAt());
     }
 }

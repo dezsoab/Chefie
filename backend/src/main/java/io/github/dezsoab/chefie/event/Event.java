@@ -42,6 +42,10 @@ public class Event {
         status = EventStatus.OPEN;
     }
 
+    public void hold() {
+        status = EventStatus.ON_HOLD;
+    }
+
     public void close() {
         status = EventStatus.CLOSED;
     }

@@ -5,7 +5,8 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "menu_item")
 public class MenuItem {
-    private final boolean enabled = true;
+    @Column(nullable = false)
+    private boolean enabled = true;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "menu_id")
     private Menu menu;
@@ -17,12 +18,21 @@ public class MenuItem {
     private String description;
     private int sortOrder;
 
-    public MenuItem() {
+    protected MenuItem() {
     }
 
-    public MenuItem(Menu menu, String name) {
+    public MenuItem(Menu menu, String name, int sortOrder) {
         this.menu = menu;
         this.name = name;
+        this.sortOrder = sortOrder;
+    }
+
+    public void rename(String name) {
+        this.name = name;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     public boolean isEnabled() {

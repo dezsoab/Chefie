@@ -14,8 +14,15 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
 
     List<Ingredient> findByEventIdAndExtraAmountNotNullOrderByName(Long eventId);
 
+    List<Ingredient> findByEventIdOrderByName(Long eventId);
+
     @Modifying
     @Query("update Ingredient i set i.stock = i.stock - :amount, i.version = i.version + 1 " +
             "where i.id = :id and (i.stock is null or i.stock >= :amount)")
     int reserve(@Param("id") Long id, @Param("amount") int amount);
+
+    @Modifying
+    @Query("update Ingredient i set i.stock = i.stock + :delta, i.version = i.version + 1 " +
+            "where i.id = :id and i.stock is not null and i.stock + :delta >= 0")
+    int adjustStock(@Param("id") Long id, @Param("delta") int delta);
 }

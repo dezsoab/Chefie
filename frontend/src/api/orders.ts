@@ -1,4 +1,5 @@
 import { csrfHeaders } from "./csrf";
+import { errorMessage } from "./http";
 
 export type PlaceOrderRequest = {
     menuItemId: number,
@@ -15,6 +16,7 @@ export type OrderCreatedResponse = {
 
 export type OrderStatusDto = {
     id: number,
+    eventId: number,
     itemName: string,
     status: OrderStatus,
     ordersAhead: number,
@@ -32,18 +34,22 @@ export async function placeOrder(request: PlaceOrderRequest): Promise<OrderCreat
         body: JSON.stringify(request)
     })
     if (!response.ok) {
-        throw new Error("Creating order failed")
+        throw new Error(await errorMessage(response, "Ordering didn't work. Please try again."))
     }
     return await response.json();
 }
 
-export async function fetchOrder(id: string, token: string): Promise<OrderStatusDto> {
+export async function fetchOrder(id: string, token: string): Promise<OrderStatusDto | null> {
     const response = await fetch(`/api/orders/${id}`, {
         method: "GET",
         headers: {
             "X-Order-Token": token
         }
     })
+
+    if (response.status === 404 || response.status === 400) {
+        return null;
+    }
 
     if (!response.ok) {
         throw new Error("Fetching order failed: " + response.status);
@@ -63,7 +69,7 @@ export async function changeOrderStatus(id: number, status: OrderStatus) {
     })
 
     if (!response.ok) {
-        throw new Error("Changing order status failed: " + response.status)
+        throw new Error(await errorMessage(response, "Changing order status failed: " + response.status))
     }
     return await response.json();
 }

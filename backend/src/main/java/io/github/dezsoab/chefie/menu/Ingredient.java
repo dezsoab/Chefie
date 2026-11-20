@@ -22,15 +22,22 @@ public class Ingredient {
     @Version
     private long version;
 
-    public Ingredient(Event event_id, String name, String unit, Integer stock) {
-        this.event = event_id;
+    public Ingredient(Event event, String name, String unit, Integer stock, Integer extraAmount) {
+        this.event = event;
         this.name = name;
         this.unit = unit;
         this.stock = stock;
+        this.extraAmount = extraAmount;
     }
 
-    public Ingredient() {
+    protected Ingredient() {
+    }
 
+    public void update(String name, String unit, Integer stock, Integer extraAmount) {
+        this.name = name;
+        this.unit = unit;
+        this.stock = stock;
+        this.extraAmount = extraAmount;
     }
 
     public Event getEvent() {
