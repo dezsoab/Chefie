@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchMenu, type MenuItemDto } from '../api/menu'
 import OrderSheet from '../components/OrderSheet'
-import LogoutButton from '../components/LogoutButton'
 
 const MenuPage = () => {
     const { data, isLoading, isError, error } = useQuery({ queryKey: ['menu'], queryFn: fetchMenu })
